@@ -14,6 +14,8 @@ def main(stdscr):
     # Set up the food
     food_position = [20, 20]
 
+    score = 0
+
     while True:
         stdscr.clear()
 
@@ -23,46 +25,54 @@ def main(stdscr):
             break
 
         # Move the snake
-        if snake_direction == curses.KEY_DOWN:
-            new_head = [snake_position[0] + 1, snake_position[1]]
-        elif snake_direction == curses.KEY_UP:
-            new_head = [snake_position[0] - 1, snake_position[1]]
-        elif snake_direction == curses.KEY_LEFT:
-            new_head = [snake_position[0], snake_position[1] - 1]
-        elif snake_direction == curses.KEY_RIGHT:
-            new_head = [snake_position[0], snake_position[1] + 1]
+        new_head = move_snake(snake_position, snake_direction)
 
         snake_body.insert(0, new_head)
 
-        # Check for food collision
-        if snake_body[0] == food_position:
-            food_position = None
-            while food_position is None:
-                nf_pos = [
-                    random.randint(1, stdscr.getmaxyx()[0] - 1),
-                    random.randint(1, stdscr.getmaxyx()[1] - 1)
-                ]
-                food_position = nf_pos
+        if check_collision(new_head, snake_body, food_position):
+            food_position = generate_new_food_position(food_position, stdscr)
+            score += 1
         else:
-            tail = snake_body.pop()
-            if tail == food_position:
-                food_position = None
-                while food_position is None:
-                    nf_pos = [
-                        random.randint(1, stdscr.getmaxyx()[0] - 1),
-                        random.randint(1, stdscr.getmaxyx()[1] - 1)
-                    ]
-                    food_position = nf_pos
+            snake_body.pop()
 
-        # Draw the snake and food
-        stdscr.addstr(0, 0, "Score: 0")
+        draw_game(stdscr, snake_body, food_position, score)
         for pos in snake_body:
             stdscr.addstr(pos[0], pos[1], "#")
 
-        if food_position!= None:
+        if food_position:
             stdscr.addstr(food_position[0], food_position[1], "*")
 
         stdscr.refresh()
 
 if __name__ == "__main__":
     curses.wrapper(main)
+
+def move_snake(position, direction):
+    if direction == curses.KEY_DOWN:
+        return [position[0] + 1, position[1]]
+    elif direction == curses.KEY_UP:
+        return [position[0] - 1, position[1]]
+    elif direction == curses.KEY_LEFT:
+        return [position[0], position[1] - 1]
+    elif direction == curses.KEY_RIGHT:
+        return [position[0], position[1] + 1]
+
+def check_collision(new_head, body, food_position):
+    return new_head == food_position or new_head in body
+
+def generate_new_food_position(old_position, stdscr):
+    max_y, max_x = stdscr.getmaxyx()
+    while True:
+        new_position = [random.randint(1, max_x - 1), random.randint(1, max_y - 1)]
+        if new_position!= old_position:
+            return new_position
+
+def draw_game(stdscr, snake_body, food_position, score):
+    stdscr.addstr(0, 0, f"Score: {score}")
+    for pos in snake_body:
+        stdscr.addstr(pos[0], pos[1], "#")
+
+    if food_position:
+        stdscr.addstr(food_position[0], food_position[1], "*")
+
+
