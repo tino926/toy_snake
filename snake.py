@@ -48,6 +48,24 @@ if __name__ == "__main__":
     curses.wrapper(main)
 
 def move_snake(position, direction):
+    """
+    Moves the snake according to the specified direction.
+
+    This function takes the snake's current position and the direction of 
+    movement as inputs, and returns the new position after the move. Directions 
+    are represented by key values defined in the curses library, including up, 
+    down, left, and right.
+
+    Parameters:
+    position: A list of two integers representing the snake's current coordinate 
+    position, [x, y]. direction: An integer representing the direction in which 
+    the snake is moving, using key values from the curses library.
+
+    Returns:
+    A list of two integers representing the snake's new coordinate position 
+    after moving, [x, y].
+    """
+    # Calculates the snake's new position based on the given direction
     if direction == curses.KEY_DOWN:
         return [position[0] + 1, position[1]]
     elif direction == curses.KEY_UP:
