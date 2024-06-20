@@ -76,6 +76,21 @@ def move_snake(position, direction):
         return [position[0], position[1] + 1]
 
 def check_collision(new_head, body, food_position):
+    """
+    Check if a collision occurs in the game.
+
+    This function is used to determine if the new head of the snake collides 
+    with the food or the body of the snake.
+
+    Parameters:
+    new_head (tuple): The coordinates of the new head of the snake.
+    body (list): The list of coordinates for the snake's body.
+    food_position (tuple): The coordinates of the food.
+
+    Returns:
+    bool: True if a collision occurs, False otherwise.
+    """
+    # Check if the new head of the snake collides with the food or the body
     return new_head == food_position or new_head in body
 
 def generate_new_food_position(old_position, stdscr):
