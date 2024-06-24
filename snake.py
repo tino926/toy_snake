@@ -95,10 +95,13 @@ def check_collision(new_head, body, food_position):
 
 def generate_new_food_position(old_position, stdscr):
     max_y, max_x = stdscr.getmaxyx()
-    while True:
-        new_position = [random.randint(1, max_x - 1), random.randint(1, max_y - 1)]
-        if new_position!= old_position:
-            return new_position
+    min_x, min_y = 1, 1  # Assuming the top-left corner is (1, 1)
+
+    # Calculate a new position that is outside the bounds of the old position
+    new_x = (old_position[0] + random.choice([-1, 1])) % (max_x - 2) + min_x
+    new_y = (old_position[1] + random.choice([-1, 1])) % (max_y - 2) + min_y
+
+    return [new_x, new_y]
 
 def draw_game(stdscr, snake_body, food_position, score):
     stdscr.addstr(0, 0, f"Score: {score}")
