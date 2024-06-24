@@ -23,6 +23,10 @@ def main(stdscr):
         key = stdscr.getch()
         if key == ord('q'):
             break
+        elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]:
+            snake_direction = key
+        else:
+            continue
 
         # Move the snake
         new_head = move_snake(snake_position, snake_direction)
@@ -74,6 +78,8 @@ def move_snake(position, direction):
         return [position[0], position[1] - 1]
     elif direction == curses.KEY_RIGHT:
         return [position[0], position[1] + 1]
+    else:
+        raise ValueError("Invalid direction")
 
 def check_collision(new_head, body, food_position):
     """
