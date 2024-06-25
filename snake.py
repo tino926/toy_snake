@@ -8,7 +8,7 @@ def main(stdscr):
 
     # Set up the snake
     snake_position = [10, 10]
-    snake_body = [[10, 10], [10, 11]]
+    snake_body = {{10, 10}, {10, 11}}
     snake_direction = curses.KEY_RIGHT
 
     # Set up the food
@@ -31,13 +31,14 @@ def main(stdscr):
         # Move the snake
         new_head = move_snake(snake_position, snake_direction)
 
-        snake_body.insert(0, new_head)
+        # Add the new head position to the set and remove the tail position
+        snake_body.add(new_head)
+        snake_body.discard((position[0] + direction[1], position[1] + direction[0]))
 
         if check_collision(new_head, snake_body, food_position):
             food_position = generate_new_food_position(food_position, stdscr)
             score += 1
         else:
-            snake_body.pop()
 
         draw_game(stdscr, snake_body, food_position, score)
         for pos in snake_body:
@@ -96,7 +97,6 @@ def check_collision(new_head, body, food_position):
     Returns:
     bool: True if a collision occurs, False otherwise.
     """
-    # Check if the new head of the snake collides with the food or the body
     return new_head == food_position or new_head in body
 
 def generate_new_food_position(old_position, stdscr):
