@@ -2,16 +2,15 @@ import curses
 import random
 
 def main(stdscr):
-    # Clear screen and turn off cursor blinking
+    """Main game loop."""
     stdscr.clear()
     curses.curs_set(0)
 
-    # Set up the snake
+    # Initialize snake and food positions
     snake_position = [10, 10]
     snake_body = [{10, 10}, {10, 11}]
     snake_direction = curses.KEY_RIGHT
-
-    # Set up the food
+    score = 0
     food_position = [20, 20]
 
     score = 0
@@ -19,27 +18,22 @@ def main(stdscr):
     while True:
         stdscr.clear()
 
-        # Get user input
+        # Handle user input
         key = stdscr.getch()
         if key == ord('q'):
             break
         elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]:
             snake_direction = key
-        else:
-            continue
 
-        # Move the snake
+        # Update snake position
         new_head = move_snake(snake_position, snake_direction)
-
-        # Add the new head position to the set and remove the tail position
-        tail_position = (snake_position[0] + (-1 if snake_direction in [curses.KEY_UP, curses.KEY_LEFT] else 1),
-                          snake_position[1] + (-1 if snake_direction in [curses.KEY_LEFT, curses.KEY_UP] else 1))
-        snake_body.remove(tail_position)
-        snake_body.add(new_head)
+        update_snake_body(snake_position, new_head, snake_direction)
 
         if check_collision(new_head, snake_body, food_position):
             food_position = generate_new_food_position(food_position, stdscr)
             score += 1
+
+        # Draw game elements
         draw_game(stdscr, snake_body, food_position, score)
         for pos in snake_body:
             stdscr.addstr(pos[0], pos[1], "#")
@@ -82,34 +76,34 @@ def move_snake(position, direction):
     else:
         raise ValueError("Invalid direction")
 
+def update_snake_body(position, new_head, direction):
+    """Update snake body by removing tail and adding new head."""
+    global snake_body
+    tail_position = get_tail_position(position, direction)
+    snake_body.remove(tail_position)
+    snake_body.add(new_head)
+
+def get_tail_position(position, direction):
+    """Determine tail position based on snake's direction."""
+    x, y = position
+    dx, dy = (-1 if direction in [curses.KEY_UP, curses.KEY_LEFT] else 1,
+               -1 if direction in [curses.KEY_LEFT, curses.KEY_UP] else 1)
+    return x + dx, y + dy
+
 def check_collision(new_head, body, food_position):
-    """
-    Check if a collision occurs in the game.
-
-    This function is used to determine if the new head of the snake collides 
-    with the food or the body of the snake.
-
-    Parameters:
-    new_head (tuple): The coordinates of the new head of the snake.
-    body (list): The list of coordinates for the snake's body.
-    food_position (tuple): The coordinates of the food.
-
-    Returns:
-    bool: True if a collision occurs, False otherwise.
-    """
+    """Check for collision between new head, body, or food."""
     return new_head == food_position or new_head in body
 
 def generate_new_food_position(old_position, stdscr):
+    """Generate new food position outside the old one."""
     max_y, max_x = stdscr.getmaxyx()
-    min_x, min_y = 1, 1  # Assuming the top-left corner is (1, 1)
-
-    # Calculate a new position that is outside the bounds of the old position
     new_x = (old_position[0] + random.choice([-1, 1])) % (max_x - 2) + min_x
     new_y = (old_position[1] + random.choice([-1, 1])) % (max_y - 2) + min_y
 
     return [new_x, new_y]
 
 def draw_game(stdscr, snake_body, food_position, score):
+    """Draw the game elements on the screen."""
     stdscr.addstr(0, 0, f"Score: {score}")
     for pos in snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
@@ -118,3 +112,4 @@ def draw_game(stdscr, snake_body, food_position, score):
         stdscr.addstr(food_position[0], food_position[1], "*")
 
 
+        stdscr.refresh()
