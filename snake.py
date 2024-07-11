@@ -1,5 +1,6 @@
 import curses
 import random
+from typing import List, Tuple
 
 def main(stdscr):
     """Main game loop."""
@@ -84,9 +85,32 @@ def get_tail_position(position, direction):
                -1 if direction in [curses.KEY_LEFT, curses.KEY_UP] else 1)
     return x + dx, y + dy
 
-def check_collision(new_head, body, food_position):
-    """Check for collision between new head, body, or food."""
-    return new_head == food_position or new_head in body
+
+def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food_position: Tuple[int, int]) -> bool:
+    """
+    Check for collision between new head, body, or food.
+
+    Args:
+        new_head (Tuple[int, int]): New head position of the snake.
+        body (List[Tuple[int, int]]): Current body positions of the snake.
+        food_position (Tuple[int, int]): Position of the food item.
+
+    Returns:
+        bool: True if a collision occurs, False otherwise.
+    """
+    # Validate input types and lengths
+    if not isinstance(new_head, tuple) or len(new_head) != 2:
+        raise ValueError("New head must be a tuple of length 2.")
+    if not all(isinstance(pos, tuple) and len(pos) == 2 for pos in body):
+        raise ValueError("Body positions must be tuples of length 2.")
+    if not isinstance(food_position, tuple) or len(food_position) != 2:
+        raise ValueError("Food position must be a tuple of length 2.")
+    
+    # Convert body list to a set for faster lookup
+    body_set = set(body)
+    
+    # Check for collision with food or self
+    return new_head == food_position or new_head in body_set
 
 def generate_new_food_position(old_position, stdscr, snake_position):
     """Generate new food position outside the old one and snake position."""
