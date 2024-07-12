@@ -1,6 +1,10 @@
 import curses
 import random
+import time
 from typing import List, Tuple
+
+# Global variable to control the delay
+delay = 0.1  # Initial delay in seconds
 
 def main(stdscr):
     """Main game loop."""
@@ -32,6 +36,7 @@ def main(stdscr):
             if check_collision(new_head, snake_body, food_position):
                 food_position = generate_new_food_position(food_position, stdscr, snake_position)
                 score += 1
+                increase_speed(score)  # Call the function to increase speed
 
             # Draw game elements
             draw_game(stdscr, snake_body, food_position, score)
@@ -134,9 +139,10 @@ def draw_game(stdscr, snake_body, food_position, score):
     stdscr.refresh()
 
 def increase_speed(score):
+    global delay
     if score % 10 == 0:  # Example condition
-        # Decrease delay in move_snake function or similar logic
-        pass
+        delay *= 0.9  # Decrease the delay by 10%, making the snake move faster
+        print(f"Speed increased! New delay: {delay} seconds")
 
 def check_level(score):
     if score >= 50:  # Example threshold
