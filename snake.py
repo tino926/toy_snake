@@ -5,9 +5,11 @@ from typing import List, Tuple
 
 # Global variable to control the delay
 delay = 0.1  # Initial delay in seconds
+level = 1  # Starting level
 
 def main(stdscr):
     """Main game loop."""
+    global delay
     stdscr.clear()
     curses.curs_set(0)
 
@@ -36,7 +38,7 @@ def main(stdscr):
             if check_collision(new_head, snake_body, food_position):
                 food_position = generate_new_food_position(food_position, stdscr, snake_position)
                 score += 1
-                increase_speed(score)  # Call the function to increase speed
+                increase_speed(score)  # Call the function to increase speed based on score
 
             # Draw game elements
             draw_game(stdscr, snake_body, food_position, score)
@@ -47,6 +49,9 @@ def main(stdscr):
                 stdscr.addstr(food_position[0], food_position[1], "*")
 
             stdscr.refresh()
+
+            check_level(score)  # Check and adjust game parameters based on current level
+
         except ValueError as e:
             stdscr.addstr(0, 0, f"Error: {e}\nPress any key to continue.")
             stdscr.getch()
@@ -139,15 +144,20 @@ def draw_game(stdscr, snake_body, food_position, score):
     stdscr.refresh()
 
 def increase_speed(score):
-    global delay
-    if score % 10 == 0:  # Example condition
+    global delay, level
+    # Increase speed every 10 points scored
+    if score % 10 == 0 and score != 0:
         delay *= 0.9  # Decrease the delay by 10%, making the snake move faster
-        print(f"Speed increased! New delay: {delay} seconds")
+        level += 1  # Increase the level
+        print(f"Level Up! You are now on Level {level}. New delay: {delay} seconds")
 
 def check_level(score):
-    if score >= 50:  # Example threshold
-        # Activate advanced mode or new features
-        pass
+    """Check the current level based on score and adjust game parameters accordingly."""
+    global level
+    # Example of adjusting game parameters based on level (this is a placeholder)
+    # For demonstration, we're just printing the level, but you could add more logic here
+    print(f"Current Level: {level}")
+    # Placeholder for other level-based adjustments
 
 def generate_obstacle():
     # Generate obstacle position and type
