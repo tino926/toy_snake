@@ -81,12 +81,35 @@ def move_snake(position, direction):
         raise ValueError("Invalid direction")
 
 def update_snake_body(body, new_head, direction, position):
-    """Update snake body by removing tail and adding new head."""
-    # Removed global keyword, instead updated snake_body by returning new list
+    """Update snake body by removing tail and adding new head.
+
+    Args:
+        body (list): The current snake body.
+        new_head (tuple): The new head position.
+        direction (str): The moving direction of the snake.
+        position (dict): A dictionary containing positions related to the snake's movement.
+
+    Returns:
+        list: The updated snake body.
+    """
+    # Calculate the tail position based on the given direction and position
     tail_position = get_tail_position(position, direction)
-    body.remove(tail_position)
-    body.append(new_head)
-    return body
+
+    # Create a copy of the original body to avoid modifying it directly
+    updated_body = body[:]
+
+    try:
+        # Remove the tail from the updated body
+        updated_body.remove(tail_position)
+    except ValueError:
+        # Handle the case where the tail is not found in the body
+        print("Warning: Tail not found in the snake body.")
+        return body  # Return the original body if an error occurs
+
+    # Add the new head to the updated body
+    updated_body.append(new_head)
+
+    return updated_body
 
 def get_tail_position(position, direction):
     """Determine tail position based on snake's direction."""
