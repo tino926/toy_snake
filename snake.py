@@ -198,8 +198,18 @@ def generate_obstacle():
     return {'position': (x, y), 'type': obstacle_type}
 
 def check_collision_with_obstacle(new_head, obstacles):
-    # Check if new_head collides with any obstacle
-    pass
+    """
+    Checks if the new_head collides with any obstacles.
+
+    :param new_head: A tuple (x, y) representing the new position.
+    :param obstacles: A list of tuples, each representing the coordinates of an obstacle.
+    :return: True if there is a collision, False otherwise.
+    """
+    for obstacle in obstacles:
+        if new_head == obstacle:
+            return True
+    return False(new_head, obstacles):
+
 
 def activate_power_up(type):
     # Apply effect based on type
