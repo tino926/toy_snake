@@ -182,9 +182,20 @@ def check_level(score):
     print(f"Current Level: {level}")
     # Placeholder for other level-based adjustments
 
+
 def generate_obstacle():
-    # Generate obstacle position and type
-    pass
+    # Define possible obstacle types
+    OBSTACLE_TYPES = ['small', 'large']
+
+    # Generate random position for the obstacle
+    x = random.randint(0, 100)
+    y = random.randint(0, 100)
+
+    # Select a random type of obstacle
+    obstacle_type = random.choice(OBSTACLE_TYPES)
+
+    # Return the obstacle as a dictionary
+    return {'position': (x, y), 'type': obstacle_type}
 
 def check_collision_with_obstacle(new_head, obstacles):
     # Check if new_head collides with any obstacle
