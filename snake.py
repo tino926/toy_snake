@@ -216,8 +216,20 @@ def activate_power_up(type):
     pass
 
 def check_collision_with_power_up(new_head, power_ups):
-    # Check if new_head collides with any power-up
-    pass
+    """
+    Checks if the new_head collides with any power-up.
+    
+    Args:
+    - new_head (tuple): A tuple (x, y) representing the new head position.
+    - power_ups (list): A list of tuples, each representing the coordinates of a power-up.
+    
+    Returns:
+    - bool: True if there is a collision, False otherwise.
+    """
+    for power_up in power_ups:
+        if new_head == power_up:
+            return True
+    return False
 
 def save_high_score(score):
     # Save score to a file or database
