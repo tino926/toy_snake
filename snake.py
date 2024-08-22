@@ -218,11 +218,11 @@ def activate_power_up(type):
 def check_collision_with_power_up(new_head, power_ups):
     """
     Checks if the new_head collides with any power-up.
-    
+
     Args:
     - new_head (tuple): A tuple (x, y) representing the new head position.
     - power_ups (list): A list of tuples, each representing the coordinates of a power-up.
-    
+
     Returns:
     - bool: True if there is a collision, False otherwise.
     """
@@ -232,8 +232,19 @@ def check_collision_with_power_up(new_head, power_ups):
     return False
 
 def save_high_score(score):
-    # Save score to a file or database
-    pass
+    """
+    Saves the given score to a file named 'high_scores.txt'.
+    
+    Args:
+        score (int): The score to be saved.
+    """
+    try:
+        # Open the file in append mode; create it if it doesn't exist
+        with open('high_scores.txt', 'a') as file:
+            # Write the score followed by a newline character
+            file.write(f"{score}\n")
+    except Exception as e:
+        print(f"An error occurred while saving the score: {e}")
 
 def load_high_score():
     # Load and return the highest score
