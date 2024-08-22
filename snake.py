@@ -247,8 +247,28 @@ def save_high_score(score):
         print(f"An error occurred while saving the score: {e}")
 
 def load_high_score():
-    # Load and return the highest score
-    pass
+    """
+    Loads and returns the highest score from the 'high_scores.txt' file.
+    
+    Returns:
+        int: The highest score found in the file, or None if the file is empty or does not exist.
+    """
+    try:
+        # Attempt to open the file in read mode
+        with open('high_scores.txt', 'r') as file:
+            scores = file.readlines()
+            if scores:
+                # Convert scores to integers and find the maximum
+                max_score = max(int(score.strip()) for score in scores)
+                return max_score
+            else:
+                return None
+    except FileNotFoundError:
+        # File does not exist
+        return None
+    except Exception as e:
+        print(f"An error occurred while loading the high score: {e}")
+        return None
 
 def handle_multiplayer_input(player1_key, player2_key):
     # Process inputs for both players
