@@ -2,6 +2,7 @@ import curses
 import random
 import time
 from typing import List, Tuple
+import pygame
 
 # Global variable to control the delay
 delay = 0.1  # Initial delay in seconds
@@ -298,6 +299,13 @@ def play_sound_effect(effect_type):
     """
     print(f"Playing sound effect: {effect_type}")
 
-def play_background_music():
-    # Start playing background music
-    pass
+
+def play_background_music(file_path):
+    # Initialize pygame mixer
+    pygame.mixer.init()
+
+    # Load the background music
+    pygame.mixer.music.load(file_path)
+
+    # Start playing the background music
+    pygame.mixer.music.play(-1)  # The argument -1 means the music will loop indefinitely
