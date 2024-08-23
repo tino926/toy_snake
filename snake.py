@@ -287,8 +287,16 @@ def handle_multiplayer_input(player1_key, player2_key):
         print("Player 2 pressed 'd'")
 
 def play_sound_effect(effect_type):
-    # Play sound effect based on type
-    pass
+    """
+    Plays a sound effect based on the given type.
+    
+    Args:
+    - effect_type: A string indicating the type of sound effect to play.
+    
+    Returns:
+    None
+    """
+    print(f"Playing sound effect: {effect_type}")
 
 def play_background_music():
     # Start playing background music
