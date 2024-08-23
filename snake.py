@@ -271,8 +271,20 @@ def load_high_score():
         return None
 
 def handle_multiplayer_input(player1_key, player2_key):
-    # Process inputs for both players
-    pass
+    """
+    Processes inputs for both players.
+    
+    Args:
+    - player1_key: The key pressed by player 1.
+    - player2_key: The key pressed by player 2.
+    
+    Returns:
+    None
+    """
+    if player1_key == 'a':
+        print("Player 1 pressed 'a'")
+    if player2_key == 'd':
+        print("Player 2 pressed 'd'")
 
 def play_sound_effect(effect_type):
     # Play sound effect based on type
