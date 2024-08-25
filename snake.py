@@ -213,8 +213,16 @@ def check_collision_with_obstacle(new_head, obstacles):
 
 
 def activate_power_up(type):
-    # Apply effect based on type
-    pass
+    """
+    Applies the effect of a power-up based on its type.
+    
+    Args:
+    - type: A string indicating the type of power-up to activate.
+    
+    Returns:
+    None
+    """
+    print(f"Activated power-up: {type}")
 
 def check_collision_with_power_up(new_head, power_ups):
     """
