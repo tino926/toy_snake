@@ -151,14 +151,17 @@ def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food
     # Check for collision with food or self
     return new_head == food_position or new_head in body_set
 
+
 def generate_new_food_position(old_position, stdscr, snake_position):
     """Generate new food position outside the old one and snake position."""
     max_y, max_x = stdscr.getmaxyx()
-    min_x, min_y = 1, 1  # Ensuring these are dynamic and adjust to screen size, assuming a border
+    # Ensuring these are dynamic and adjust to screen size, assuming a border
+    min_x, min_y = 1, 1
 
     # Ensure new food position is not in the snake's position
     while old_position == snake_position or old_position in snake_position:
-        old_position = [random.randint(min_x, max_x - 2), random.randint(min_y, max_y - 2)]
+        old_position = [random.randint(
+            min_x, max_x - 2), random.randint(min_y, max_y - 2)]
 
     return old_position
 
