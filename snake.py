@@ -8,6 +8,7 @@ import pygame
 delay = 0.1  # Initial delay in seconds
 level = 1  # Starting level
 
+
 def main(stdscr):
     """Main game loop."""
     global delay
@@ -34,12 +35,15 @@ def main(stdscr):
 
             # Update snake position
             new_head = move_snake(snake_position, snake_direction)
-            snake_body = update_snake_body(snake_body, new_head, snake_direction, snake_position)
+            snake_body = update_snake_body(
+                snake_body, new_head, snake_direction, snake_position)
 
             if check_collision(new_head, snake_body, food_position):
-                food_position = generate_new_food_position(food_position, stdscr, snake_position)
+                food_position = generate_new_food_position(
+                    food_position, stdscr, snake_position)
                 score += 1
-                increase_speed(score)  # Call the function to increase speed based on score
+                # Call the function to increase speed based on score
+                increase_speed(score)
 
             # Draw game elements
             draw_game(stdscr, snake_body, food_position, score)
@@ -51,7 +55,8 @@ def main(stdscr):
 
             stdscr.refresh()
 
-            check_level(score)  # Check and adjust game parameters based on current level
+            # Check and adjust game parameters based on current level
+            check_level(score)
 
         except ValueError as e:
             stdscr.addstr(0, 0, f"Error: {e}\nPress any key to continue.")
