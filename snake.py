@@ -42,6 +42,7 @@ def main(stdscr):
                 food_position = generate_new_food_position(
                     food_position, stdscr, snake_position)
                 score += 1
+                delay = apply_power_up_effect("speed", snake_body, delay)  # Example usage
                 # Call the function to increase speed based on score
                 increase_speed(score)
 
@@ -325,3 +326,33 @@ def play_background_music(file_path):
 
     # Start playing the background music
     pygame.mixer.music.play(-1)  # The argument -1 means the music will loop indefinitely
+
+
+def apply_power_up_effect(power_up_type, snake_body, delay):
+    """
+    Applies the effect of a power-up based on its type.
+
+    Args:
+    - power_up_type (str): The type of power-up to activate.
+    - snake_body (list): The current body positions of the snake.
+    - delay (float): The current delay in seconds.
+
+    Returns:
+    None
+    """
+    if power_up_type == "speed":
+        delay *= 0.9  # Decrease the delay by 10%, making the snake move faster
+        print("Speed power-up activated!")
+    elif power_up_type == "grow":
+        # Grow the snake by adding extra segments
+        for _ in range(3):
+            tail = snake_body[0].copy()
+            snake_body.insert(0, tail)
+        print("Grow power-up activated!")
+    elif power_up_type == "slow":
+        delay *= 1.1  # Increase the delay by 10%, slowing down the snake
+        print("Slow power-up activated!")
+    else:
+        print(f"Unknown power-up type: {power_up_type}")
+
+    return delay
