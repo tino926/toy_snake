@@ -8,19 +8,39 @@ import pygame
 delay = 0.1  # Initial delay in seconds
 level = 1  # Starting level
 
+# Initialize pygame mixer for sound effects
+pygame.mixer.init()
+
+# Define power-up types
+POWER_UP_TYPES = ['speed', 'grow', 'slow']
+
+# Define game dimensions
+max_x, max_y = 100, 100  # Set default game dimensions, should be dynamically determined
 
 def main(stdscr):
     """Main game loop."""
-    global delay
+    global delay, level, max_x, max_y
     stdscr.clear()
     curses.curs_set(0)
+
+    # Get terminal size dynamically
+    max_y, max_x = stdscr.getmaxyx()
+    min_x, min_y = 1, 1
 
     # Initialize snake and food positions
     snake_position = [10, 10]
     snake_body = [{10, 10}, {10, 11}]
     snake_direction = curses.KEY_RIGHT
     score = 0
-    food_position = [20, 20]
+    food_position = generate_new_food_position(
+        food_position, stdscr, snake_position)
+
+    # Initialize power-ups and obstacles
+    power_ups = []
+    obstacles = []
+
+    # Initialize background music
+    play_background_music("background_music.mp3")  # Replace with your music file
 
     while True:
         try:
@@ -38,26 +58,36 @@ def main(stdscr):
             snake_body = update_snake_body(
                 snake_body, new_head, snake_direction, snake_position)
 
+            # Check for collisions
             if check_collision(new_head, snake_body, food_position):
                 food_position = generate_new_food_position(
                     food_position, stdscr, snake_position)
                 score += 1
-                delay = apply_power_up_effect("speed", snake_body, delay)  # Example usage
-                # Call the function to increase speed based on score
+                # Example usage of power-up
+                power_up = generate_power_up()
+                power_ups.append(power_up)
+                delay = apply_power_up_effect(power_up['type'], snake_body, delay)
                 increase_speed(score)
+            elif check_collision_with_obstacle(new_head, obstacles):
+                # Handle collision with an obstacle
+                print("Game Over! You hit an obstacle.")
+                break
+            elif check_collision_with_power_up(new_head, power_ups):
+                power_up = check_collision_with_power_up(new_head, power_ups)
+                if power_up:
+                    delay = apply_power_up_effect(
+                        power_up['type'], snake_body, delay)
+                    power_ups.remove(power_up)
 
             # Draw game elements
-            draw_game(stdscr, snake_body, food_position, score)
-            for pos in snake_body:
-                stdscr.addstr(pos[0], pos[1], "#")
-
-            if food_position:
-                stdscr.addstr(food_position[0], food_position[1], "*")
-
-            stdscr.refresh()
+            draw_game(
+                stdscr, snake_body, food_position, score, power_ups, obstacles)
 
             # Check and adjust game parameters based on current level
             check_level(score)
+
+            # Control game speed
+            time.sleep(delay)
 
         except ValueError as e:
             stdscr.addstr(0, 0, f"Error: {e}\nPress any key to continue.")
@@ -166,7 +196,7 @@ def generate_new_food_position(old_position, stdscr, snake_position):
 
     return old_position
 
-def draw_game(stdscr, snake_body, food_position, score):
+def draw_game(stdscr, snake_body, food_position, score, power_ups, obstacles):
     """Draw the game elements on the screen."""
     stdscr.addstr(0, 0, f"Score: {score}")
     for pos in snake_body:
@@ -174,6 +204,13 @@ def draw_game(stdscr, snake_body, food_position, score):
 
     if food_position:
         stdscr.addstr(food_position[0], food_position[1], "*")
+
+    for power_up in power_ups:
+        stdscr.addstr(power_up['position'][0], power_up['position'][1], "P")
+
+    for obstacle in obstacles:
+        stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
+
     stdscr.refresh()
 
 def increase_speed(score):
@@ -198,8 +235,8 @@ def generate_obstacle():
     OBSTACLE_TYPES = ['small', 'large']
 
     # Generate random position for the obstacle
-    x = random.randint(0, 100)
-    y = random.randint(0, 100)
+    x = random.randint(0, max_x - 2)  # Ensure within the screen boundaries
+    y = random.randint(0, max_y - 2)
 
     # Select a random type of obstacle
     obstacle_type = random.choice(OBSTACLE_TYPES)
@@ -216,9 +253,9 @@ def check_collision_with_obstacle(new_head, obstacles):
     :return: True if there is a collision, False otherwise.
     """
     for obstacle in obstacles:
-        if new_head == obstacle:
+        if new_head == obstacle['position']:
             return True
-    return False(new_head, obstacles):
+    return False
 
 
 def activate_power_up(type):
@@ -245,9 +282,9 @@ def check_collision_with_power_up(new_head, power_ups):
     - bool: True if there is a collision, False otherwise.
     """
     for power_up in power_ups:
-        if new_head == power_up:
-            return True
-    return False
+        if new_head == power_up['position']:
+            return power_up
+    return None
 
 def save_high_score(score):
     """
@@ -316,6 +353,7 @@ def play_sound_effect(effect_type):
     """
     print(f"Playing sound effect: {effect_type}")
 
+    # Replace this with actual sound effect playback based on effect_type
 
 def play_background_music(file_path):
     # Initialize pygame mixer
@@ -326,7 +364,6 @@ def play_background_music(file_path):
 
     # Start playing the background music
     pygame.mixer.music.play(-1)  # The argument -1 means the music will loop indefinitely
-
 
 def apply_power_up_effect(power_up_type, snake_body, delay):
     """
@@ -364,7 +401,6 @@ def generate_power_up():
     Returns:
     - dict: A dictionary containing the power-up type and position.
     """
-    POWER_UP_TYPES = ['speed', 'grow', 'slow']
     x = random.randint(1, max_x - 2)
     y = random.randint(1, max_y - 2)
     power_up_type = random.choice(POWER_UP_TYPES)
