@@ -356,3 +356,32 @@ def apply_power_up_effect(power_up_type, snake_body, delay):
         print(f"Unknown power-up type: {power_up_type}")
 
     return delay
+
+def generate_power_up():
+    """
+    Generates a random power-up and its position.
+
+    Returns:
+    - dict: A dictionary containing the power-up type and position.
+    """
+    POWER_UP_TYPES = ['speed', 'grow', 'slow']
+    x = random.randint(1, max_x - 2)
+    y = random.randint(1, max_y - 2)
+    power_up_type = random.choice(POWER_UP_TYPES)
+    return {'position': (x, y), 'type': power_up_type}
+
+def check_collision_with_power_up(new_head, power_ups):
+    """
+    Checks if the new_head collides with any power-up.
+
+    Args:
+    - new_head (tuple): A tuple (x, y) representing the new head position.
+    - power_ups (list): A list of dictionaries, each representing a power-up.
+
+    Returns:
+    - bool: True if there is a collision, False otherwise.
+    """
+    for power_up in power_ups:
+        if new_head == power_up['position']:
+            return power_up
+    return None
