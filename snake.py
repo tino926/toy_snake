@@ -82,7 +82,7 @@ def main(stdscr):
                 if power_up:
                     delay = apply_power_up_effect(
                         power_up['type'], snake_body, delay)
-                    power_ups.remove(power_up)
+                    # power_ups.remove(power_up) - Removed as it is handled in the optimized function
 
             # Draw game elements
             draw_game(
@@ -281,13 +281,15 @@ def check_collision_with_power_up(new_head, power_ups):
 
     Args:
     - new_head (tuple): A tuple (x, y) representing the new head position.
-    - power_ups (list): A list of tuples, each representing the coordinates of a power-up.
+    - power_ups (list): A list of dictionaries, each representing a power-up.
 
     Returns:
-    - bool: True if there is a collision, False otherwise.
+    - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
-    for power_up in power_ups:
+    for i, power_up in enumerate(power_ups):
         if new_head == power_up['position']:
+            # If a collision is found, remove the power-up from the list
+            del power_ups[i]
             return power_up
     return None
 
@@ -422,7 +424,9 @@ def check_collision_with_power_up(new_head, power_ups):
     Returns:
     - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
-    for power_up in power_ups:
+    for i, power_up in enumerate(power_ups):
         if new_head == power_up['position']:
+            # If a collision is found, remove the power-up from the list
+            del power_ups[i]
             return power_up
     return None
