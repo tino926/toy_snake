@@ -51,7 +51,12 @@ def main(stdscr):
             if key == ord('q'):
                 break
             elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]:
-                snake_direction = key
+                # Only change direction if it's not the opposite of the current direction
+                if not (key == curses.KEY_UP and snake_direction == curses.KEY_DOWN or 
+                        key == curses.KEY_DOWN and snake_direction == curses.KEY_UP or
+                        key == curses.KEY_LEFT and snake_direction == curses.KEY_RIGHT or
+                        key == curses.KEY_RIGHT and snake_direction == curses.KEY_LEFT):
+                    snake_direction = key
 
             # Update snake position
             new_head = move_snake(snake_position, snake_direction)
@@ -375,7 +380,7 @@ def apply_power_up_effect(power_up_type, snake_body, delay):
     - delay (float): The current delay in seconds.
 
     Returns:
-    None
+    float: Updated delay value.
     """
     if power_up_type == "speed":
         delay *= 0.9  # Decrease the delay by 10%, making the snake move faster
@@ -415,7 +420,7 @@ def check_collision_with_power_up(new_head, power_ups):
     - power_ups (list): A list of dictionaries, each representing a power-up.
 
     Returns:
-    - bool: True if there is a collision, False otherwise.
+    - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
     for power_up in power_ups:
         if new_head == power_up['position']:
