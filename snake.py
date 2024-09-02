@@ -140,13 +140,13 @@ def update_snake_body(body, new_head, direction, position):
     # Create a copy of the original body to avoid modifying it directly
     updated_body = body[:]
 
-    try:
+    # Directly check if the tail is in the body list
+    if tail_position in updated_body:
         # Remove the tail from the updated body
         updated_body.remove(tail_position)
-    except ValueError:
+    else:
         # Handle the case where the tail is not found in the body
         print("Warning: Tail not found in the snake body.")
-        return body  # Return the original body if an error occurs
 
     # Add the new head to the updated body
     updated_body.append(new_head)
