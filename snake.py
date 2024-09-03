@@ -412,20 +412,3 @@ def generate_power_up():
     power_up_type = random.choice(POWER_UP_TYPES)
     return {'position': (x, y), 'type': power_up_type}
 
-def check_collision_with_power_up(new_head, power_ups):
-    """
-    Checks if the new_head collides with any power-up.
-
-    Args:
-    - new_head (tuple): A tuple (x, y) representing the new head position.
-    - power_ups (list): A list of dictionaries, each representing a power-up.
-
-    Returns:
-    - dict: The power-up dictionary if a collision occurs, None otherwise.
-    """
-    for i, power_up in enumerate(power_ups):
-        if new_head == power_up['position']:
-            # If a collision is found, remove the power-up from the list
-            del power_ups[i]
-            return power_up
-    return None
