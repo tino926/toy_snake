@@ -286,11 +286,15 @@ def check_collision_with_power_up(new_head, power_ups):
     Returns:
     - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
-    i = 0
-    while i < len(power_ups):
-        if new_head == power_ups[i]['position']:
-            # If a collision is found, remove the power-up from the list
-            return power_ups.pop(i)
+
+    # Use list comprehension to filter power-ups
+    power_ups[:] = [power_up for power_up in power_ups if new_head != power_up['position']]
+
+    # If a collision occurred, the list will be shorter 
+    if len(power_ups) < len(power_ups):
+        return True
+    else:
+        return False
 
 def save_high_score(score):
     """
