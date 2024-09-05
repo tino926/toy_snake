@@ -181,11 +181,16 @@ def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food
     if not isinstance(food_position, tuple) or len(food_position) != 2:
         raise ValueError("Food position must be a tuple of length 2.")
 
-    # Create a dictionary for faster collision checks
-    body_dict = {pos: True for pos in body}
+    # Check for collision with food
+    if new_head == food_position:
+        return True
 
-    # Check for collision with food or self
-    return new_head == food_position or new_head in body_dict
+    # Check for collision with self (skip the head)
+    for pos in body[1:]:
+        if new_head == pos:
+            return True
+
+    return False
 
 
 def generate_new_food_position(old_position, stdscr, snake_position):
