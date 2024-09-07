@@ -134,31 +134,13 @@ def update_snake_body(body, new_head, direction, position):
     Returns:
         list: The updated snake body.
     """
-    # Calculate the tail position based on the given direction and position
-    tail_position = get_tail_position(position, direction)
-
-    # Create a copy of the original body to avoid modifying it directly
-    updated_body = body[:]
-
-    # Directly check if the tail is in the body list
-    if tail_position in updated_body:
-        # Remove the tail from the updated body
-        updated_body.remove(tail_position)
-    else:
-        # Handle the case where the tail is not found in the body
-        print("Warning: Tail not found in the snake body.")
+    # Optimization 1: Efficient tail removal
+    del body[0] 
 
     # Add the new head to the updated body
-    updated_body.append(new_head)
+    body.append(new_head)
 
-    return updated_body
-
-def get_tail_position(position, direction):
-    """Determine tail position based on snake's direction."""
-    x, y = position
-    dx, dy = (-1 if direction in [curses.KEY_UP, curses.KEY_LEFT] else 1,
-               -1 if direction in [curses.KEY_LEFT, curses.KEY_UP] else 1)
-    return x + dx, y + dy
+    return body
 
 
 def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food_position: Tuple[int, int]) -> bool:
@@ -282,7 +264,7 @@ def activate_power_up(type):
 
 def check_collision_with_power_up(new_head, power_ups):
     """
-    Checks if the new_head collides with any power-up.
+    Checks if the new_head collides with any power-up and removes the collided power-up.
 
     Args:
     - new_head (tuple): A tuple (x, y) representing the new head position.
@@ -291,15 +273,11 @@ def check_collision_with_power_up(new_head, power_ups):
     Returns:
     - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
-
-    # Use list comprehension to filter power-ups
-    power_ups[:] = [power_up for power_up in power_ups if new_head != power_up['position']]
-
-    # If a collision occurred, the list will be shorter 
-    if len(power_ups) < len(power_ups):
-        return True
-    else:
-        return False
+    # Optimization 2: Early exit in loop
+    for i, power_up in enumerate(power_ups):
+        if new_head == power_up['position']:
+            return power_ups.pop(i)  # Remove and return the collided power-up
+    return None
 
 def save_high_score(score):
     """
@@ -420,4 +398,3 @@ def generate_power_up():
     y = random.randint(1, max_y - 2)
     power_up_type = random.choice(POWER_UP_TYPES)
     return {'position': (x, y), 'type': power_up_type}
-
