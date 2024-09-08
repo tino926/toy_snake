@@ -77,12 +77,9 @@ def main(stdscr):
                 # Handle collision with an obstacle
                 print("Game Over! You hit an obstacle.")
                 break
-            elif check_collision_with_power_up(new_head, power_ups):
-                power_up = check_collision_with_power_up(new_head, power_ups)
-                if power_up:
-                    delay = apply_power_up_effect(
-                        power_up['type'], snake_body, delay)
-                    # power_ups.remove(power_up) - Removed as it is handled in the optimized function
+            # Optimized power-up collision check
+            elif (power_up := check_collision_with_power_up(new_head, power_ups)):
+                delay = apply_power_up_effect(power_up['type'], snake_body, delay)
 
             # Draw game elements
             draw_game(
