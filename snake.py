@@ -3,6 +3,7 @@ import random
 import time
 from typing import List, Tuple
 import pygame
+from collections import deque  # Import deque for efficient snake body
 
 # Global variable to control the delay
 delay = 0.1  # Initial delay in seconds
@@ -29,7 +30,7 @@ def main(stdscr):
 
     # Initialize snake and food positions
     snake_position = [10, 10]
-    snake_body = [{10, 10}, {10, 11}]
+    snake_body = deque([{10, 10}, {10, 11}])  # Use deque for snake body
     snake_direction = curses.KEY_RIGHT
     score = 0
     food_position = generate_new_food_position(
@@ -120,33 +121,28 @@ def move_snake(position, direction):
         raise ValueError("Invalid direction")
 
 def update_snake_body(body, new_head, direction, position):
-    """Update snake body by removing tail and adding new head.
+    """Update snake body efficiently.
 
     Args:
-        body (list): The current snake body.
+        body (collections.deque): The current snake body.
         new_head (tuple): The new head position.
         direction (str): The moving direction of the snake.
         position (dict): A dictionary containing positions related to the snake's movement.
 
     Returns:
-        list: The updated snake body.
+        collections.deque: The updated snake body.
     """
-    # Optimization 1: Efficient tail removal
-    del body[0] 
-
-    # Add the new head to the updated body
-    body.append(new_head)
-
+    body.append(new_head)  # Add new head
+    body.popleft()  # Remove tail
     return body
 
-
-def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food_position: Tuple[int, int]) -> bool:
+def check_collision(new_head: Tuple[int, int], body: deque, food_position: Tuple[int, int]) -> bool:
     """
     Check for collision between new head, body, or food.
 
     Args:
         new_head (Tuple[int, int]): New head position of the snake.
-        body (List[Tuple[int, int]]): Current body positions of the snake.
+        body (collections.deque): Current body positions of the snake.
         food_position (Tuple[int, int]): Position of the food item.
 
     Returns:
@@ -155,6 +151,7 @@ def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food
     # Validate input types and lengths
     if not isinstance(new_head, tuple) or len(new_head) != 2:
         raise ValueError("New head must be a tuple of length 2.")
+    # Modified to handle deque in body
     if not all(isinstance(pos, tuple) and len(pos) == 2 for pos in body):
         raise ValueError("Body positions must be tuples of length 2.")
     if not isinstance(food_position, tuple) or len(food_position) != 2:
@@ -165,7 +162,7 @@ def check_collision(new_head: Tuple[int, int], body: List[Tuple[int, int]], food
         return True
 
     # Check for collision with self (skip the head)
-    for pos in body[1:]:
+    for pos in list(body)[1:]:  # Convert to list for indexing
         if new_head == pos:
             return True
 
@@ -360,7 +357,7 @@ def apply_power_up_effect(power_up_type, snake_body, delay):
 
     Args:
     - power_up_type (str): The type of power-up to activate.
-    - snake_body (list): The current body positions of the snake.
+    - snake_body (collections.deque): The current body positions of the snake.
     - delay (float): The current delay in seconds.
 
     Returns:
