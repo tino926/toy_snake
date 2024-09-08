@@ -273,11 +273,10 @@ def check_collision_with_power_up(new_head, power_ups):
     Returns:
     - dict: The power-up dictionary if a collision occurs, None otherwise.
     """
-    # Optimization 2: Early exit in loop
     for i, power_up in enumerate(power_ups):
         if new_head == power_up['position']:
             return power_ups.pop(i)  # Remove and return the collided power-up
-    return None
+    return None  # No collision found
 
 def save_high_score(score):
     """
