@@ -65,9 +65,18 @@ def main(stdscr):
     # Initialize background music (replace with your music file)
     play_background_music("background_music.mp3")
 
+    # --- Game Loop Timing ---
+    target_frame_time = 1.0 / FRAME_RATE  # Target time per frame
+    last_frame_time = time.perf_counter()
+
     while True:
+        # --- Calculate time since last frame ---
+        current_time = time.perf_counter()
+        elapsed_time = current_time - last_frame_time
+        last_frame_time = current_time
+
         try:
-            # Handle user input
+            # --- Handle user input ---
             key = stdscr.getch()
             if key == ord('q'):
                 break
@@ -81,55 +90,65 @@ def main(stdscr):
                 ]:
                     game_state.snake_direction = key
 
-            # Update snake position
-            new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
-            game_state.snake_body.append(new_head)
+            # --- Update game state ---
+            # Only update if enough time has passed since the last update
+            if elapsed_time >= game_state.delay:
+                new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
+                game_state.snake_body.append(new_head)
 
-            # Check for collisions
-            if check_collision(new_head, game_state.snake_body, game_state.food_position):
-                game_state.food_position = game_state.generate_new_food_position()
-                game_state.score += 1
-                # Example usage of power-up
-                if random.random() < 0.1:  # 10% chance to spawn a power-up
-                    game_state.power_ups.append(generate_power_up())
-                game_state.delay = apply_power_up_effect(
-                    game_state.power_ups, game_state.snake_body, game_state.delay
+                # Check for collisions
+                if check_collision(new_head, game_state.snake_body, game_state.food_position):
+                    game_state.food_position = game_state.generate_new_food_position()
+                    game_state.score += 1
+                    # Example usage of power-up
+                    if random.random() < 0.1:  # 10% chance to spawn a power-up
+                        game_state.power_ups.append(generate_power_up())
+                    game_state.delay = apply_power_up_effect(
+                        game_state.power_ups, game_state.snake_body, game_state.delay
+                    )
+                    increase_speed(game_state)
+                else:
+                    game_state.snake_body.popleft()  # Remove tail if no food eaten
+
+                if any(check_collision(new_head, game_state.snake_body, obstacle['position']) for obstacle in game_state.obstacles):
+                    # Handle collision with an obstacle
+                    print("Game Over! You hit an obstacle.")
+                    break
+
+                # Optimized power-up collision check
+                collided_power_up = next(
+                    (
+                        power_up
+                        for power_up in game_state.power_ups
+                        if check_collision(new_head, game_state.snake_body, power_up['position'])
+                    ),
+                    None,
                 )
-                increase_speed(game_state)
-            else:
-                game_state.snake_body.popleft()  # Remove tail if no food eaten
+                if collided_power_up:
+                    game_state.power_ups.remove(collided_power_up)
+                    game_state.delay = apply_power_up_effect(
+                        [collided_power_up], game_state.snake_body, game_state.delay
+                    )
 
-            if any(check_collision(new_head, game_state.snake_body, obstacle['position']) for obstacle in game_state.obstacles):
-                # Handle collision with an obstacle
-                print("Game Over! You hit an obstacle.")
-                break
+                # Check for game over (collision with self or boundaries)
+                if game_over(new_head, game_state.snake_body):
+                    print("Game Over!")
+                    break
 
-            # Optimized power-up collision check
-            collided_power_up = next(
-                (
-                    power_up
-                    for power_up in game_state.power_ups
-                    if check_collision(new_head, game_state.snake_body, power_up['position'])
-                ),
-                None,
-            )
-            if collided_power_up:
-                game_state.power_ups.remove(collided_power_up)
-                game_state.delay = apply_power_up_effect(
-                    [collided_power_up], game_state.snake_body, game_state.delay
-                )
+                # --- Adjust delay for next frame based on level ---
+                game_state.delay = INITIAL_DELAY / game_state.level
 
-            # Check for game over (collision with self or boundaries)
-            if game_over(new_head, game_state.snake_body):
-                print("Game Over!")
-                break
-
-            # Draw game elements
+            # --- Draw game elements ---
             stdscr.clear()
             draw_game(stdscr, game_state)
 
             # Check and adjust game parameters based on current level
             check_level(game_state)
+
+            # --- Sleep to maintain frame rate ---
+            sleep_time = target_frame_time - (time.perf_counter() - current_time)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
         except ValueError as e:
             stdscr.addstr(0, 0, f"Error: {e}\nPress any key to continue.")
@@ -172,7 +191,6 @@ def draw_game(stdscr, game_state):
 def increase_speed(game_state):
     """Increase speed every 10 points scored."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
-        game_state.delay *= SPEED_INCREASE_PER_LEVEL
         game_state.level += 1
 
 def check_level(game_state):
