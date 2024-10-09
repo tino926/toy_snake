@@ -94,6 +94,10 @@ def main(stdscr):
             # Only update if enough time has passed since the last update
             if elapsed_time >= game_state.delay:
                 new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
+
+                # Wall teleport
+                new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X) 
+
                 game_state.snake_body.append(new_head)
 
                 # Check for collisions
@@ -130,7 +134,7 @@ def main(stdscr):
                         [collided_power_up], game_state.snake_body, game_state.delay
                     )
 
-                # Check for game over (collision with self or boundaries)
+                # Check for game over (collision with self ONLY)
                 if game_over(new_head, game_state.snake_body):
                     print("Game Over!")
                     break
@@ -218,12 +222,8 @@ def generate_obstacle():
 
 
 def game_over(new_head, snake_body):
-    """Check if the game is over."""
-    return (
-        new_head[0] in (0, MAX_Y - 1)
-        or new_head[1] in (0, MAX_X - 1)
-        or new_head in list(snake_body)[:-1]
-    )
+    """Check if the game is over (only collision with self)."""
+    return new_head in list(snake_body)[:-1] 
 
 def play_sound_effect(effect_type):
     """Plays a sound effect based on the given type."""
