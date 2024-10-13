@@ -22,6 +22,8 @@ SPEED_INCREASE_PER_LEVEL = 0.9
 INITIAL_DELAY = 0.1
 
 # --- Game State ---
+
+
 class GameState:
     def __init__(self):
         self.score = 0
@@ -43,12 +45,14 @@ class GameState:
             if (
                 new_position not in self.snake_body
                 and new_position != self.food_position
-                and all(new_position != obstacle['position'] for obstacle in 
+                and all(new_position != obstacle['position'] for obstacle in
                         self.obstacles)
             ):
                 return new_position
 
 # --- Game Functions ---
+
+
 def main(stdscr):
     """Main game loop."""
     global MAX_X, MAX_Y
@@ -84,7 +88,7 @@ def main(stdscr):
                 break
             elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
                          curses.KEY_RIGHT]:
-                # Only change direction if it's not the opposite of the current 
+                # Only change direction if it's not the opposite of the current
                 # direction
                 if (key, game_state.snake_direction) not in [
                     (curses.KEY_UP, curses.KEY_DOWN),
@@ -97,11 +101,11 @@ def main(stdscr):
             # --- Update game state ---
             # Only update if enough time has passed since the last update
             if elapsed_time >= game_state.delay:
-                new_head = move_snake(game_state.snake_body[-1], 
+                new_head = move_snake(game_state.snake_body[-1],
                                       game_state.snake_direction)
 
                 # Wall teleport
-                new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X) 
+                new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
 
                 game_state.snake_body.append(new_head)
 
@@ -170,6 +174,7 @@ def main(stdscr):
             stdscr.addstr(0, 0, f"Error: {e}\nPress any key to continue.")
             stdscr.getch()
 
+
 def move_snake(position, direction):
     """
     Moves the snake according to the specified direction.
@@ -184,6 +189,7 @@ def move_snake(position, direction):
         return position[0], position[1] + 1
     else:
         raise ValueError("Invalid direction")
+
 
 def check_collision(new_head, snake_body, target_position):
     """
@@ -205,6 +211,7 @@ def draw_game(stdscr, game_state):
     for obstacle in game_state.obstacles:
         stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
     stdscr.refresh()
+
 
 def increase_speed(game_state):
     """Increase speed every 10 points scored."""
@@ -240,12 +247,14 @@ def generate_obstacle():
 
 def game_over(new_head, snake_body):
     """Check if the game is over (only collision with self)."""
-    return new_head in list(snake_body)[:-1] 
+    return new_head in list(snake_body)[:-1]
+
 
 def play_sound_effect(effect_type):
     """Plays a sound effect based on the given type."""
     # Add your sound effect logic here
     print(f"Playing sound effect: {effect_type}")
+
 
 def play_background_music(file_path):
     """Plays background music."""
@@ -254,6 +263,7 @@ def play_background_music(file_path):
         pygame.mixer.music.play(-1)
     except pygame.error as e:
         print(f"Error playing background music: {e}")
+
 
 def apply_power_up_effect(power_ups, snake_body, delay):
     """Applies the effect of collected power-ups."""
@@ -267,12 +277,14 @@ def apply_power_up_effect(power_ups, snake_body, delay):
             delay *= 1.1  # Decrease speed
     return delay
 
+
 def generate_power_up():
     """Generates a random power-up."""
     x = random.randint(1, MAX_X - 2)
     y = random.randint(1, MAX_Y - 2)
     power_up_type = random.choice(POWER_UP_TYPES)
     return {'position': (x, y), 'type': power_up_type}
+
 
 if __name__ == "__main__":
     curses.wrapper(main)
