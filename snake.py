@@ -43,7 +43,8 @@ class GameState:
             if (
                 new_position not in self.snake_body
                 and new_position != self.food_position
-                and all(new_position != obstacle['position'] for obstacle in self.obstacles)
+                and all(new_position != obstacle['position'] for obstacle in 
+                        self.obstacles)
             ):
                 return new_position
 
@@ -53,7 +54,8 @@ def main(stdscr):
     global MAX_X, MAX_Y
     curses.curs_set(0)
     stdscr.nodelay(True)  # Make getch() non-blocking
-    stdscr.timeout(int(1000 / FRAME_RATE))  # Set a timeout for consistent frame rate
+    # Set a timeout for consistent frame rate
+    stdscr.timeout(int(1000 / FRAME_RATE))
 
     # Get terminal size dynamically, adjust game dimensions if needed
     max_y, max_x = stdscr.getmaxyx()
@@ -80,8 +82,10 @@ def main(stdscr):
             key = stdscr.getch()
             if key == ord('q'):
                 break
-            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]:
-                # Only change direction if it's not the opposite of the current direction
+            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
+                         curses.KEY_RIGHT]:
+                # Only change direction if it's not the opposite of the current 
+                # direction
                 if (key, game_state.snake_direction) not in [
                     (curses.KEY_UP, curses.KEY_DOWN),
                     (curses.KEY_DOWN, curses.KEY_UP),
@@ -93,7 +97,8 @@ def main(stdscr):
             # --- Update game state ---
             # Only update if enough time has passed since the last update
             if elapsed_time >= game_state.delay:
-                new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
+                new_head = move_snake(game_state.snake_body[-1], 
+                                      game_state.snake_direction)
 
                 # Wall teleport
                 new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X) 
@@ -101,20 +106,24 @@ def main(stdscr):
                 game_state.snake_body.append(new_head)
 
                 # Check for collisions
-                if check_collision(new_head, game_state.snake_body, game_state.food_position):
+                if check_collision(new_head, game_state.snake_body,
+                                   game_state.food_position):
                     game_state.food_position = game_state.generate_new_food_position()
                     game_state.score += 1
                     # Example usage of power-up
                     if random.random() < 0.1:  # 10% chance to spawn a power-up
                         game_state.power_ups.append(generate_power_up())
                     game_state.delay = apply_power_up_effect(
-                        game_state.power_ups, game_state.snake_body, game_state.delay
+                        game_state.power_ups, game_state.snake_body,
+                        game_state.delay
                     )
                     increase_speed(game_state)
                 else:
                     game_state.snake_body.popleft()  # Remove tail if no food eaten
 
-                if any(check_collision(new_head, game_state.snake_body, obstacle['position']) for obstacle in game_state.obstacles):
+                if any(check_collision(new_head, game_state.snake_body,
+                                       obstacle['position']) for obstacle in
+                       game_state.obstacles):
                     # Handle collision with an obstacle
                     print("Game Over! You hit an obstacle.")
                     break
@@ -124,14 +133,16 @@ def main(stdscr):
                     (
                         power_up
                         for power_up in game_state.power_ups
-                        if check_collision(new_head, game_state.snake_body, power_up['position'])
+                        if check_collision(new_head, game_state.snake_body,
+                                           power_up['position'])
                     ),
                     None,
                 )
                 if collided_power_up:
                     game_state.power_ups.remove(collided_power_up)
                     game_state.delay = apply_power_up_effect(
-                        [collided_power_up], game_state.snake_body, game_state.delay
+                        [collided_power_up], game_state.snake_body,
+                        game_state.delay
                     )
 
                 # Check for game over (collision with self ONLY)
@@ -150,7 +161,8 @@ def main(stdscr):
             check_level(game_state)
 
             # --- Sleep to maintain frame rate ---
-            sleep_time = target_frame_time - (time.perf_counter() - current_time)
+            sleep_time = target_frame_time - \
+                (time.perf_counter() - current_time)
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
@@ -179,13 +191,15 @@ def check_collision(new_head, snake_body, target_position):
     """
     return new_head == target_position or new_head in list(snake_body)[:-1]
 
+
 def draw_game(stdscr, game_state):
     """Draw the game elements on the screen."""
     stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level}")
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
-        stdscr.addstr(game_state.food_position[0], game_state.food_position[1], "*")
+        stdscr.addstr(
+            game_state.food_position[0], game_state.food_position[1], "*")
     for power_up in game_state.power_ups:
         stdscr.addstr(power_up['position'][0], power_up['position'][1], "P")
     for obstacle in game_state.obstacles:
@@ -197,18 +211,21 @@ def increase_speed(game_state):
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
 
+
 def check_level(game_state):
     """Check the current level and adjust game parameters accordingly."""
     # Example (add more logic as needed based on game_state.level):
     if game_state.level > 1 and len(game_state.obstacles) < game_state.level // 2:
         game_state.obstacles.append(generate_obstacle())
 
+
 def generate_obstacle():
     """Generates a random obstacle."""
     while True:
         x = random.randint(1, MAX_X - 2)
         y = random.randint(1, MAX_Y - 2)
-        new_obstacle = {'position': (x, y), 'type': random.choice(['small', 'large'])}
+        new_obstacle = {'position': (
+            x, y), 'type': random.choice(['small', 'large'])}
         # Ensure the obstacle doesn't spawn on top of other game elements
         if (
             new_obstacle['position'] not in game_state.snake_body
