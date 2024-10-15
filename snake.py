@@ -20,6 +20,8 @@ POINTS_PER_LEVEL = 10
 SPEED_INCREASE_PER_LEVEL = 0.9
 # Define initial game speed (delay)
 INITIAL_DELAY = 0.1
+# Define power-up duration in seconds
+POWER_UP_DURATION = 5 
 
 # --- Game State ---
 
@@ -32,7 +34,7 @@ class GameState:
         self.snake_body = deque([(10, 10), (10, 11)])
         self.snake_direction = curses.KEY_RIGHT
         self.food_position = self.generate_new_food_position()
-        self.power_ups = []
+        self.power_ups = []  # Now a list of dictionaries: {'type': ..., 'expiration_time': ...}
         self.obstacles = []
 
     def generate_new_food_position(self):
@@ -116,10 +118,12 @@ def main(stdscr):
                     game_state.score += 1
                     # Example usage of power-up
                     if random.random() < 0.1:  # 10% chance to spawn a power-up
-                        game_state.power_ups.append(generate_power_up())
+                        game_state.power_ups.append(generate_power_up(current_time))
+                    
+                    # Apply power-up effects immediately upon pickup
                     game_state.delay = apply_power_up_effect(
                         game_state.power_ups, game_state.snake_body,
-                        game_state.delay
+                        game_state.delay, current_time
                     )
                     increase_speed(game_state)
                 else:
@@ -146,7 +150,7 @@ def main(stdscr):
                     game_state.power_ups.remove(collided_power_up)
                     game_state.delay = apply_power_up_effect(
                         [collided_power_up], game_state.snake_body,
-                        game_state.delay
+                        game_state.delay, current_time
                     )
 
                 # Check for game over (collision with self ONLY)
@@ -265,7 +269,7 @@ def play_background_music(file_path):
         print(f"Error playing background music: {e}")
 
 
-def apply_power_up_effect(power_ups, snake_body, delay):
+def apply_power_up_effect(power_ups, snake_body, delay, current_time):
     """Applies the effect of collected power-ups."""
     for power_up in power_ups:
         if power_up['type'] == "speed":
@@ -275,15 +279,18 @@ def apply_power_up_effect(power_ups, snake_body, delay):
                 snake_body.appendleft(snake_body[0])  # Grow the snake
         elif power_up['type'] == "slow":
             delay *= 1.1  # Decrease speed
+
+        # Set expiration time for the power-up
+        power_up['expiration_time'] = current_time + POWER_UP_DURATION
     return delay
 
 
-def generate_power_up():
-    """Generates a random power-up."""
+def generate_power_up(current_time):
+    """Generates a random power-up with an expiration time."""
     x = random.randint(1, MAX_X - 2)
     y = random.randint(1, MAX_Y - 2)
     power_up_type = random.choice(POWER_UP_TYPES)
-    return {'position': (x, y), 'type': power_up_type}
+    return {'position': (x, y), 'type': power_up_type, 'expiration_time': current_time + POWER_UP_DURATION}
 
 
 if __name__ == "__main__":
