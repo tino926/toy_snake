@@ -21,7 +21,7 @@ SPEED_INCREASE_PER_LEVEL = 0.9
 # Define initial game speed (delay)
 INITIAL_DELAY = 0.1
 # Define power-up duration in seconds
-POWER_UP_DURATION = 5 
+POWER_UP_DURATION = 5
 
 # --- Game State ---
 
@@ -119,7 +119,7 @@ def main(stdscr):
                     # Example usage of power-up
                     if random.random() < 0.1:  # 10% chance to spawn a power-up
                         game_state.power_ups.append(generate_power_up(current_time))
-                    
+
                     # Apply power-up effects immediately upon pickup
                     game_state.delay = apply_power_up_effect(
                         game_state.power_ups, game_state.snake_body,
@@ -211,7 +211,13 @@ def draw_game(stdscr, game_state):
         stdscr.addstr(
             game_state.food_position[0], game_state.food_position[1], "*")
     for power_up in game_state.power_ups:
-        stdscr.addstr(power_up['position'][0], power_up['position'][1], "P")
+        # Change the display of power-ups based on their type
+        if power_up['type'] == 'speed':
+            stdscr.addstr(power_up['position'][0], power_up['position'][1], "S")
+        elif power_up['type'] == 'grow':
+            stdscr.addstr(power_up['position'][0], power_up['position'][1], "G")
+        elif power_up['type'] == 'slow':
+            stdscr.addstr(power_up['position'][0], power_up['position'][1], "L")
     for obstacle in game_state.obstacles:
         stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
     stdscr.refresh()
