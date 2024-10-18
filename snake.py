@@ -34,7 +34,8 @@ class GameState:
         self.snake_body = deque([(10, 10), (10, 11)])
         self.snake_direction = curses.KEY_RIGHT
         self.food_position = self.generate_new_food_position()
-        self.power_ups = []  # Now a list of dictionaries: {'type': ..., 'expiration_time': ...}
+        # Now a list of dictionaries: {'type': ..., 'expiration_time': ...}
+        self.power_ups = []
         self.obstacles = []
 
     def generate_new_food_position(self):
@@ -118,7 +119,8 @@ def main(stdscr):
                     game_state.score += 1
                     # Example usage of power-up
                     if random.random() < 0.1:  # 10% chance to spawn a power-up
-                        game_state.power_ups.append(generate_power_up(current_time))
+                        game_state.power_ups.append(
+                            generate_power_up(current_time))
 
                     # Apply power-up effects immediately upon pickup
                     game_state.delay = apply_power_up_effect(
@@ -213,11 +215,14 @@ def draw_game(stdscr, game_state):
     for power_up in game_state.power_ups:
         # Change the display of power-ups based on their type
         if power_up['type'] == 'speed':
-            stdscr.addstr(power_up['position'][0], power_up['position'][1], "S")
+            stdscr.addstr(power_up['position'][0],
+                          power_up['position'][1], "S")
         elif power_up['type'] == 'grow':
-            stdscr.addstr(power_up['position'][0], power_up['position'][1], "G")
+            stdscr.addstr(power_up['position'][0],
+                          power_up['position'][1], "G")
         elif power_up['type'] == 'slow':
-            stdscr.addstr(power_up['position'][0], power_up['position'][1], "L")
+            stdscr.addstr(power_up['position'][0],
+                          power_up['position'][1], "L")
     for obstacle in game_state.obstacles:
         stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
     stdscr.refresh()
@@ -296,7 +301,8 @@ def generate_power_up(current_time):
     x = random.randint(1, MAX_X - 2)
     y = random.randint(1, MAX_Y - 2)
     power_up_type = random.choice(POWER_UP_TYPES)
-    return {'position': (x, y), 'type': power_up_type, 'expiration_time': current_time + POWER_UP_DURATION}
+    return {'position': (x, y), 'type': power_up_type,
+            'expiration_time': current_time + POWER_UP_DURATION}
 
 
 if __name__ == "__main__":
