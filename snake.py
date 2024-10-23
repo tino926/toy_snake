@@ -37,6 +37,8 @@ class GameState:
         # Now a list of dictionaries: {'type': ..., 'expiration_time': ...}
         self.power_ups = []
         self.obstacles = []
+        # New: Flag to track if the game is paused
+        self.paused = False
 
     def generate_new_food_position(self):
         """Generate new food position, avoiding snake and obstacles."""
@@ -89,8 +91,16 @@ def main(stdscr):
             key = stdscr.getch()
             if key == ord('q'):
                 break
+            # Pause the game
+            elif key == ord('p'):
+                game_state.paused = not game_state.paused
+                if game_state.paused:
+                    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused")
+                    stdscr.refresh()
+                else:
+                    stdscr.clear()
             elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
-                         curses.KEY_RIGHT]:
+                         curses.KEY_RIGHT] and not game_state.paused:
                 # Only change direction if it's not the opposite of the current
                 # direction
                 if (key, game_state.snake_direction) not in [
@@ -102,8 +112,8 @@ def main(stdscr):
                     game_state.snake_direction = key
 
             # --- Update game state ---
-            # Only update if enough time has passed since the last update
-            if elapsed_time >= game_state.delay:
+            # Only update if enough time has passed since the last update and the game is not paused
+            if elapsed_time >= game_state.delay and not game_state.paused:
                 new_head = move_snake(game_state.snake_body[-1],
                                       game_state.snake_direction)
 
