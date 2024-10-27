@@ -60,7 +60,7 @@ def main(stdscr):
     MAX_Y = min(MAX_Y, max_y - 2)
 
     game_state = GameState()
-    play_background_music("background_music.mp3")  # Replace with your file
+    # play_background_music("background_music.mp3")  # Replace with your file
 
     target_frame_time = 1.0 / FRAME_RATE
     last_frame_time = time.perf_counter()
@@ -110,6 +110,7 @@ def main(stdscr):
                 game_state.delay = apply_power_up_effect(game_state, current_time)
                 increase_speed(game_state)
 
+                game_state.snake_body.append(new_head)  # Add the new head to the snake
 
                 for obstacle in list(game_state.obstacles):  # Iterate over a copy
                     if check_collision(new_head, game_state.snake_body, obstacle['position']):
@@ -190,6 +191,7 @@ def increase_speed(game_state):
     """Increases speed based on level."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
+        game_state.delay = max(0.05, game_state.delay * SPEED_INCREASE_PER_LEVEL) # Increase speed each level
 
 
 
