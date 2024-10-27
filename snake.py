@@ -60,7 +60,7 @@ def main(stdscr):
     MAX_Y = min(MAX_Y, max_y - 2)
 
     game_state = GameState()
-    # play_background_music("background_music.mp3")  # Replace with your file
+    play_background_music("background_music.mp3")  # Replace with your music file 
 
     target_frame_time = 1.0 / FRAME_RATE
     last_frame_time = time.perf_counter()
@@ -224,9 +224,6 @@ def game_over_screen(stdscr, message, score):
     stdscr.getch()  # Wait for any key press
 
 
-# ... (Other functions: play_sound_effect, play_background_music)
-
-
 def apply_power_up_effect(game_state, current_time):
     """Applies power-up effects and updates the game state."""
 
@@ -257,6 +254,14 @@ def generate_power_up(current_time, game_state):
     return {'position': game_state.generate_new_item_position(power_up=True),
             'type': random.choice(POWER_UP_TYPES)}
 
+
+def play_background_music(music_file):
+    """Plays background music indefinitely."""
+    try:
+        pygame.mixer.music.load(music_file)
+        pygame.mixer.music.play(-1)  # Loop indefinitely
+    except pygame.error as e:
+        print(f"Error playing background music: {e}")
 
 
 if __name__ == "__main__":
