@@ -118,9 +118,15 @@ def main(stdscr):
                 else:
                     game_state.snake_body.popleft()
 
+                # The original code had redundancy in applying power-up effects
+                # and increasing speed. It applied power-ups, then potentially 
+                # recalculated delay with increase_speed, and then applied the 
+                # potentially outdated delay value.
+                # The fix is to rearrange the order of operations:
+                increase_speed(game_state) # First, increase speed based on level
                 game_state.delay = apply_power_up_effect(
-                    game_state, current_time)
-                increase_speed(game_state)
+                    game_state, current_time) # Then, apply any time-based power-up effects
+                
 
                 # Add the new head to the snake
                 game_state.snake_body.append(new_head)
@@ -137,7 +143,8 @@ def main(stdscr):
                 if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
                     raise ValueError("Game Over! You ran into yourself.")
 
-                game_state.delay = INITIAL_DELAY / game_state.level  # Adjust delay based on level
+                # This line is redundant as increase_speed already updates the delay based on the level
+                # game_state.delay = INITIAL_DELAY / game_state.level  # Adjust delay based on level 
 
             stdscr.clear()
             draw_game(stdscr, game_state)
