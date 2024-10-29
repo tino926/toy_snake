@@ -17,8 +17,8 @@ POINTS_PER_LEVEL = 10
 SPEED_INCREASE_PER_LEVEL = 0.9
 INITIAL_DELAY = 0.1
 POWER_UP_DURATION = 5
-OBSTACLE_COUNT_PER_LEVEL = 2  # Number of obstacles per level
-
+OBSTACLE_COUNT_PER_LEVEL = 2
+SNAKE_COLLISION_ENABLED = True  # New feature: Toggle snake collision with itself
 
 class GameState:
     def __init__(self):
@@ -50,7 +50,7 @@ class GameState:
 
 def main(stdscr):
     """Main game loop."""
-    global MAX_X, MAX_Y
+    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(int(1000 / FRAME_RATE))
@@ -60,8 +60,7 @@ def main(stdscr):
     MAX_Y = min(MAX_Y, max_y - 2)
 
     game_state = GameState()
-    # Replace with your music file
-    play_background_music("background_music.mp3")
+    play_background_music("background_music.mp3")  # Replace with your music
 
     target_frame_time = 1.0 / FRAME_RATE
     last_frame_time = time.perf_counter()
@@ -83,8 +82,15 @@ def main(stdscr):
                 else:
                     # Added clear to remove the "Paused" message.
                     stdscr.clear()
+            # New Feature: Toggle snake collision with itself 
+            elif key == ord('c'):
+                SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
+                message = "Snake Collision: ON" if SNAKE_COLLISION_ENABLED else "Snake Collision: OFF"
+                stdscr.addstr(0, MAX_X // 2 - len(message) // 2, message)
+                stdscr.refresh()
+                time.sleep(0.5)  # Brief pause for the message
 
-            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, 
+            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
                          curses.KEY_RIGHT] and not game_state.paused:
                 if (key, game_state.snake_direction) not in [
                     (curses.KEY_UP, curses.KEY_DOWN),
@@ -100,7 +106,7 @@ def main(stdscr):
                 new_head = (new_head[0] %
                             MAX_Y, new_head[1] % MAX_X)  # Teleport
 
-                if check_collision(new_head, game_state.snake_body, 
+                if check_collision(new_head, game_state.snake_body,
                                    game_state.food_position):
                     game_state.food_position = game_state.generate_new_item_position(
                         food=True)
@@ -127,8 +133,9 @@ def main(stdscr):
                     if check_collision(new_head, game_state.snake_body, power_up['position']):
                         game_state.power_ups.remove(power_up)
 
-                if game_over(new_head, game_state.snake_body):
-                    raise ValueError("Game Over!")
+                # Check for game over (collision with self) only if enabled
+                if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
+                    raise ValueError("Game Over! You ran into yourself.")
 
                 game_state.delay = INITIAL_DELAY / game_state.level  # Adjust delay based on level
 
@@ -211,7 +218,6 @@ def generate_obstacle(game_state):
         new_position = game_state.generate_new_item_position()
         new_obstacle = {'position': new_position,
                         'type': random.choice(['small', 'large'])}
-        # ... (rest of your collision checks)
         return new_obstacle
 
 
@@ -239,7 +245,7 @@ def apply_power_up_effect(game_state, current_time):
         if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:
 
             if power_up['type'] == "speed":
-                game_state.delay *= 0.8  # Increased speed boost
+                game_state.delay *= 0.8 
             elif power_up['type'] == "grow":
                 for _ in range(3):
                     game_state.snake_body.appendleft(game_state.snake_body[0])
