@@ -60,11 +60,11 @@ def main(stdscr):
     MAX_Y = min(MAX_Y, max_y - 2)
 
     game_state = GameState()
-    play_background_music("background_music.mp3")  # Replace with your music file 
+    # Replace with your music file
+    play_background_music("background_music.mp3")
 
     target_frame_time = 1.0 / FRAME_RATE
     last_frame_time = time.perf_counter()
-
 
     while True:
         current_time = time.perf_counter()
@@ -81,9 +81,11 @@ def main(stdscr):
                     stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused")
                     stdscr.refresh()
                 else:
-                    stdscr.clear()  # Added clear to remove the "Paused" message.
+                    # Added clear to remove the "Paused" message.
+                    stdscr.clear()
 
-            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
+            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, 
+                         curses.KEY_RIGHT] and not game_state.paused:
                 if (key, game_state.snake_direction) not in [
                     (curses.KEY_UP, curses.KEY_DOWN),
                     (curses.KEY_DOWN, curses.KEY_UP),
@@ -92,30 +94,34 @@ def main(stdscr):
                 ]:
                     game_state.snake_direction = key
 
-
             if elapsed_time >= game_state.delay and not game_state.paused:
-                new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
-                new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)  # Teleport
+                new_head = move_snake(
+                    game_state.snake_body[-1], game_state.snake_direction)
+                new_head = (new_head[0] %
+                            MAX_Y, new_head[1] % MAX_X)  # Teleport
 
-
-                if check_collision(new_head, game_state.snake_body, game_state.food_position):
-                    game_state.food_position = game_state.generate_new_item_position(food=True)
+                if check_collision(new_head, game_state.snake_body, 
+                                   game_state.food_position):
+                    game_state.food_position = game_state.generate_new_item_position(
+                        food=True)
                     game_state.score += 1
 
                     if random.random() < 0.15:  # Increased chance for power-ups
-                        game_state.power_ups.append(generate_power_up(current_time, game_state))
+                        game_state.power_ups.append(
+                            generate_power_up(current_time, game_state))
                 else:
                     game_state.snake_body.popleft()
 
-                game_state.delay = apply_power_up_effect(game_state, current_time)
+                game_state.delay = apply_power_up_effect(
+                    game_state, current_time)
                 increase_speed(game_state)
 
-                game_state.snake_body.append(new_head)  # Add the new head to the snake
+                # Add the new head to the snake
+                game_state.snake_body.append(new_head)
 
                 for obstacle in list(game_state.obstacles):  # Iterate over a copy
                     if check_collision(new_head, game_state.snake_body, obstacle['position']):
                         raise ValueError("Game Over! You hit an obstacle.")
-
 
                 for power_up in list(game_state.power_ups):  # Iterate over a copy
                     if check_collision(new_head, game_state.snake_body, power_up['position']):
@@ -124,22 +130,20 @@ def main(stdscr):
                 if game_over(new_head, game_state.snake_body):
                     raise ValueError("Game Over!")
 
-
                 game_state.delay = INITIAL_DELAY / game_state.level  # Adjust delay based on level
 
             stdscr.clear()
             draw_game(stdscr, game_state)
             check_level(game_state)
 
-
-            sleep_time = target_frame_time - (time.perf_counter() - current_time)
+            sleep_time = target_frame_time - \
+                (time.perf_counter() - current_time)
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
         except ValueError as e:
             game_over_screen(stdscr, str(e), game_state.score)
             break  # Exit game loop after game over
-
 
 
 def move_snake(position, direction):
@@ -161,15 +165,14 @@ def check_collision(new_head, snake_body, target_position):
     return new_head == target_position or new_head in list(snake_body)[:-1]
 
 
-
-
 def draw_game(stdscr, game_state):
     """Draws the game elements."""
     stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level}")
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
-        stdscr.addstr(game_state.food_position[0], game_state.food_position[1], "*")
+        stdscr.addstr(
+            game_state.food_position[0], game_state.food_position[1], "*")
 
     for power_up in game_state.power_ups:
         char = {
@@ -191,8 +194,9 @@ def increase_speed(game_state):
     """Increases speed based on level."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
-        game_state.delay = max(0.05, game_state.delay * SPEED_INCREASE_PER_LEVEL) # Increase speed each level
-
+        # Increase speed each level
+        game_state.delay = max(0.05, game_state.delay *
+                               SPEED_INCREASE_PER_LEVEL)
 
 
 def check_level(game_state):
@@ -205,7 +209,8 @@ def generate_obstacle(game_state):
     """Generates an obstacle, avoiding collisions."""
     while True:
         new_position = game_state.generate_new_item_position()
-        new_obstacle = {'position': new_position, 'type': random.choice(['small', 'large'])}
+        new_obstacle = {'position': new_position,
+                        'type': random.choice(['small', 'large'])}
         # ... (rest of your collision checks)
         return new_obstacle
 
@@ -219,7 +224,8 @@ def game_over_screen(stdscr, message, score):
     """Displays the game over screen."""
     stdscr.clear()
     stdscr.addstr(MAX_Y // 2, MAX_X // 2 - len(message) // 2, message)
-    stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 - len(str(score)) // 2, f"Score: {score}")
+    stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 -
+                  len(str(score)) // 2, f"Score: {score}")
     stdscr.refresh()
     stdscr.getch()  # Wait for any key press
 
@@ -227,8 +233,10 @@ def game_over_screen(stdscr, message, score):
 def apply_power_up_effect(game_state, current_time):
     """Applies power-up effects and updates the game state."""
 
-    for power_up in list(game_state.power_ups): # Iterate over a copy to allow safe removal during iteration
-        if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:  # Check expiration
+    # Iterate over a copy to allow safe removal during iteration
+    for power_up in list(game_state.power_ups):
+        # Check expiration
+        if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:
 
             if power_up['type'] == "speed":
                 game_state.delay *= 0.8  # Increased speed boost
@@ -239,14 +247,16 @@ def apply_power_up_effect(game_state, current_time):
                 game_state.delay *= 1.2  # Increased slow penalty
             elif power_up['type'] == "obstacle_remove":
                 if game_state.obstacles:
-                    game_state.obstacles.pop(random.randrange(len(game_state.obstacles))) # Removes a random Obstacle
+                    game_state.obstacles.pop(random.randrange(
+                        len(game_state.obstacles)))  # Removes a random Obstacle
 
-            if 'expiration_time' not in power_up: # Add an expiration time only after the power-up is applied.
+            # Add an expiration time only after the power-up is applied.
+            if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
         else:
-            game_state.power_ups.remove(power_up) # Remove the power-up after it expires.
-    return game_state.delay # Return potentially modified delay
-
+            # Remove the power-up after it expires.
+            game_state.power_ups.remove(power_up)
+    return game_state.delay  # Return potentially modified delay
 
 
 def generate_power_up(current_time, game_state):
