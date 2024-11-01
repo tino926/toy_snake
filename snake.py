@@ -12,13 +12,15 @@ pygame.mixer.init()
 MAX_X = 40
 MAX_Y = 20
 FRAME_RATE = 30
-POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove']  # New power-up
+POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove']
 POINTS_PER_LEVEL = 10
 SPEED_INCREASE_PER_LEVEL = 0.9
 INITIAL_DELAY = 0.1
 POWER_UP_DURATION = 5
 OBSTACLE_COUNT_PER_LEVEL = 2
 SNAKE_COLLISION_ENABLED = True  # New feature: Toggle snake collision with itself
+SNAKE_GROWTH_ON_FOOD = 1  # Feature: Control how much the snake grows when eating food
+
 
 class GameState:
     def __init__(self):
@@ -50,7 +52,7 @@ class GameState:
 
 def main(stdscr):
     """Main game loop."""
-    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED
+    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(int(1000 / FRAME_RATE))
@@ -80,15 +82,20 @@ def main(stdscr):
                     stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused")
                     stdscr.refresh()
                 else:
-                    # Added clear to remove the "Paused" message.
                     stdscr.clear()
-            # New Feature: Toggle snake collision with itself 
+            # New Feature: Toggle snake collision with itself
             elif key == ord('c'):
                 SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
                 message = "Snake Collision: ON" if SNAKE_COLLISION_ENABLED else "Snake Collision: OFF"
                 stdscr.addstr(0, MAX_X // 2 - len(message) // 2, message)
                 stdscr.refresh()
                 time.sleep(0.5)  # Brief pause for the message
+            # New Feature: Increase growth amount when eating food.
+            elif key == ord('+') and SNAKE_GROWTH_ON_FOOD < 5:
+                SNAKE_GROWTH_ON_FOOD += 1
+            elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
+                SNAKE_GROWTH_ON_FOOD -= 1
+
 
             elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
                          curses.KEY_RIGHT] and not game_state.paused:
@@ -111,6 +118,10 @@ def main(stdscr):
                     game_state.food_position = game_state.generate_new_item_position(
                         food=True)
                     game_state.score += 1
+                    # Grow snake based on SNAKE_GROWTH_ON_FOOD
+                    for _ in range(SNAKE_GROWTH_ON_FOOD):
+                        game_state.snake_body.append(game_state.snake_body[-1])
+
 
                     if random.random() < 0.15:  # Increased chance for power-ups
                         game_state.power_ups.append(
@@ -118,33 +129,22 @@ def main(stdscr):
                 else:
                     game_state.snake_body.popleft()
 
-                # The original code had redundancy in applying power-up effects
-                # and increasing speed. It applied power-ups, then potentially 
-                # recalculated delay with increase_speed, and then applied the 
-                # potentially outdated delay value.
-                # The fix is to rearrange the order of operations:
-                increase_speed(game_state) # First, increase speed based on level
+                increase_speed(game_state)
                 game_state.delay = apply_power_up_effect(
-                    game_state, current_time) # Then, apply any time-based power-up effects
-                
+                    game_state, current_time)
 
-                # Add the new head to the snake
                 game_state.snake_body.append(new_head)
 
-                for obstacle in list(game_state.obstacles):  # Iterate over a copy
+                for obstacle in list(game_state.obstacles):
                     if check_collision(new_head, game_state.snake_body, obstacle['position']):
                         raise ValueError("Game Over! You hit an obstacle.")
 
-                for power_up in list(game_state.power_ups):  # Iterate over a copy
+                for power_up in list(game_state.power_ups):
                     if check_collision(new_head, game_state.snake_body, power_up['position']):
                         game_state.power_ups.remove(power_up)
 
-                # Check for game over (collision with self) only if enabled
                 if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
                     raise ValueError("Game Over! You ran into yourself.")
-
-                # This line is redundant as increase_speed already updates the delay based on the level
-                # game_state.delay = INITIAL_DELAY / game_state.level  # Adjust delay based on level 
 
             stdscr.clear()
             draw_game(stdscr, game_state)
@@ -157,7 +157,7 @@ def main(stdscr):
 
         except ValueError as e:
             game_over_screen(stdscr, str(e), game_state.score)
-            break  # Exit game loop after game over
+            break
 
 
 def move_snake(position, direction):
@@ -181,7 +181,7 @@ def check_collision(new_head, snake_body, target_position):
 
 def draw_game(stdscr, game_state):
     """Draws the game elements."""
-    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level}")
+    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD}") # Display SNAKE_GROWTH_ON_FOOD
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
@@ -194,7 +194,7 @@ def draw_game(stdscr, game_state):
             'grow': 'G',
             'slow': 'L',
             'obstacle_remove': 'R'
-        }.get(power_up['type'], '?')  # Default char if type not found
+        }.get(power_up['type'], '?')
 
         stdscr.addstr(power_up['position'][0], power_up['position'][1], char)
 
@@ -204,11 +204,11 @@ def draw_game(stdscr, game_state):
     stdscr.refresh()
 
 
+
 def increase_speed(game_state):
     """Increases speed based on level."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
-        # Increase speed each level
         game_state.delay = max(0.05, game_state.delay *
                                SPEED_INCREASE_PER_LEVEL)
 
@@ -240,36 +240,32 @@ def game_over_screen(stdscr, message, score):
     stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 -
                   len(str(score)) // 2, f"Score: {score}")
     stdscr.refresh()
-    stdscr.getch()  # Wait for any key press
+    stdscr.getch()
 
 
 def apply_power_up_effect(game_state, current_time):
     """Applies power-up effects and updates the game state."""
 
-    # Iterate over a copy to allow safe removal during iteration
     for power_up in list(game_state.power_ups):
-        # Check expiration
         if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:
 
             if power_up['type'] == "speed":
-                game_state.delay *= 0.8 
+                game_state.delay *= 0.8
             elif power_up['type'] == "grow":
                 for _ in range(3):
                     game_state.snake_body.appendleft(game_state.snake_body[0])
             elif power_up['type'] == "slow":
-                game_state.delay *= 1.2  # Increased slow penalty
+                game_state.delay *= 1.2
             elif power_up['type'] == "obstacle_remove":
                 if game_state.obstacles:
                     game_state.obstacles.pop(random.randrange(
-                        len(game_state.obstacles)))  # Removes a random Obstacle
+                        len(game_state.obstacles)))
 
-            # Add an expiration time only after the power-up is applied.
             if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
         else:
-            # Remove the power-up after it expires.
             game_state.power_ups.remove(power_up)
-    return game_state.delay  # Return potentially modified delay
+    return game_state.delay
 
 
 def generate_power_up(current_time, game_state):
@@ -282,7 +278,7 @@ def play_background_music(music_file):
     """Plays background music indefinitely."""
     try:
         pygame.mixer.music.load(music_file)
-        pygame.mixer.music.play(-1)  # Loop indefinitely
+        pygame.mixer.music.play(-1)
     except pygame.error as e:
         print(f"Error playing background music: {e}")
 
