@@ -21,6 +21,11 @@ OBSTACLE_COUNT_PER_LEVEL = 2
 SNAKE_COLLISION_ENABLED = True  # New feature: Toggle snake collision with itself
 SNAKE_GROWTH_ON_FOOD = 1  # Feature: Control how much the snake grows when eating food
 
+# New Feature: Score Multiplier for consecutive food eats within a time window
+SCORE_MULTIPLIER_WINDOW = 2  # Seconds
+score_multiplier_time = None
+score_multiplier = 1
+
 
 class GameState:
     def __init__(self):
@@ -52,7 +57,7 @@ class GameState:
 
 def main(stdscr):
     """Main game loop."""
-    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD
+    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD, score_multiplier_time, score_multiplier
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(int(1000 / FRAME_RATE))
@@ -117,7 +122,15 @@ def main(stdscr):
                                    game_state.food_position):
                     game_state.food_position = game_state.generate_new_item_position(
                         food=True)
-                    game_state.score += 1
+                    # Score Multiplier Feature
+                    if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
+                        score_multiplier += 1
+                    else:
+                        score_multiplier = 1
+                    score_multiplier_time = current_time #update multiplier timer
+                    game_state.score += 1 * score_multiplier
+
+
                     # Grow snake based on SNAKE_GROWTH_ON_FOOD
                     for _ in range(SNAKE_GROWTH_ON_FOOD):
                         game_state.snake_body.append(game_state.snake_body[-1])
@@ -147,7 +160,7 @@ def main(stdscr):
                     raise ValueError("Game Over! You ran into yourself.")
 
             stdscr.clear()
-            draw_game(stdscr, game_state)
+            draw_game(stdscr, game_state, score_multiplier)  # Pass score_multiplier
             check_level(game_state)
 
             sleep_time = target_frame_time - \
@@ -179,9 +192,10 @@ def check_collision(new_head, snake_body, target_position):
     return new_head == target_position or new_head in list(snake_body)[:-1]
 
 
-def draw_game(stdscr, game_state):
+
+def draw_game(stdscr, game_state, score_multiplier):  # Accept score_multiplier
     """Draws the game elements."""
-    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD}") # Display SNAKE_GROWTH_ON_FOOD
+    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier}") #Includes Multiplier
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
@@ -202,7 +216,6 @@ def draw_game(stdscr, game_state):
         stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
 
     stdscr.refresh()
-
 
 
 def increase_speed(game_state):
