@@ -26,6 +26,8 @@ SCORE_MULTIPLIER_WINDOW = 2  # Seconds
 score_multiplier_time = None
 score_multiplier = 1
 
+# New Feature 2: Temporary Invincibility Power-Up
+INVINCIBILITY_DURATION = 3  # Seconds
 
 class GameState:
     def __init__(self):
@@ -38,6 +40,8 @@ class GameState:
         self.power_ups: List[Dict] = []
         self.obstacles: List[Dict] = []
         self.paused = False
+        self.invincible = False  # New: Invincibility flag
+        self.invincibility_end_time = 0 # New: Track the end time of invincibility
 
     def generate_new_item_position(self, food=False, power_up=False):
         """Generate new position for food or power-ups, avoiding collisions."""
@@ -118,6 +122,8 @@ def main(stdscr):
                 new_head = (new_head[0] %
                             MAX_Y, new_head[1] % MAX_X)  # Teleport
 
+
+
                 if check_collision(new_head, game_state.snake_body,
                                    game_state.food_position):
                     game_state.food_position = game_state.generate_new_item_position(
@@ -142,22 +148,36 @@ def main(stdscr):
                 else:
                     game_state.snake_body.popleft()
 
+                # New: Check for invincibility expiration
+                if game_state.invincible and current_time > game_state.invincibility_end_time:
+                    game_state.invincible = False
+
+
                 increase_speed(game_state)
                 game_state.delay = apply_power_up_effect(
                     game_state, current_time)
 
                 game_state.snake_body.append(new_head)
+                # Check for collisions only if not invincible
+                if not game_state.invincible:
+                    for obstacle in list(game_state.obstacles):
+                        if check_collision(new_head, game_state.snake_body, obstacle['position']):
+                           raise ValueError("Game Over! You hit an obstacle.")
 
-                for obstacle in list(game_state.obstacles):
-                    if check_collision(new_head, game_state.snake_body, obstacle['position']):
-                        raise ValueError("Game Over! You hit an obstacle.")
+                    if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
+                        raise ValueError("Game Over! You ran into yourself.")
+
+
 
                 for power_up in list(game_state.power_ups):
                     if check_collision(new_head, game_state.snake_body, power_up['position']):
+                        # New: Add invincibility power-up
+                        if power_up['type'] == 'invincible':
+                            game_state.invincible = True
+                            game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
                         game_state.power_ups.remove(power_up)
+                        
 
-                if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
-                    raise ValueError("Game Over! You ran into yourself.")
 
             stdscr.clear()
             draw_game(stdscr, game_state, score_multiplier)  # Pass score_multiplier
@@ -283,8 +303,9 @@ def apply_power_up_effect(game_state, current_time):
 
 def generate_power_up(current_time, game_state):
     """Generates a power-up with a position avoiding other objects."""
+    power_up_type = random.choice(POWER_UP_TYPES + ['invincible']) # New: Include 'invincible'
     return {'position': game_state.generate_new_item_position(power_up=True),
-            'type': random.choice(POWER_UP_TYPES)}
+            'type': power_up_type} # New: include invincibility
 
 
 def play_background_music(music_file):
