@@ -152,12 +152,13 @@ def main(stdscr):
                 if game_state.invincible and current_time > game_state.invincibility_end_time:
                     game_state.invincible = False
 
-
-                increase_speed(game_state)
+                # Apply power-up effects *before* appending the new head
+                # This prevents immediate collision with obstacles after getting a speed boost
                 game_state.delay = apply_power_up_effect(
                     game_state, current_time)
-
                 game_state.snake_body.append(new_head)
+
+
                 # Check for collisions only if not invincible
                 if not game_state.invincible:
                     for obstacle in list(game_state.obstacles):
@@ -175,13 +176,16 @@ def main(stdscr):
                         if power_up['type'] == 'invincible':
                             game_state.invincible = True
                             game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
+                        apply_power_up_effect(game_state, current_time) #Apply power-up effects immediately
                         game_state.power_ups.remove(power_up)
-                        
 
 
             stdscr.clear()
             draw_game(stdscr, game_state, score_multiplier)  # Pass score_multiplier
+            increase_speed(game_state) #moved speed increase so it updates correctly.
             check_level(game_state)
+
+
 
             sleep_time = target_frame_time - \
                 (time.perf_counter() - current_time)
@@ -191,6 +195,7 @@ def main(stdscr):
         except ValueError as e:
             game_over_screen(stdscr, str(e), game_state.score)
             break
+
 
 
 def move_snake(position, direction):
@@ -227,8 +232,9 @@ def draw_game(stdscr, game_state, score_multiplier):  # Accept score_multiplier
             'speed': 'S',
             'grow': 'G',
             'slow': 'L',
-            'obstacle_remove': 'R'
-        }.get(power_up['type'], '?')
+            'obstacle_remove': 'R',
+            'invincible': 'I' # Added char for invincibility power-up.
+        }.get(power_up['type'], '?') # Included invincible.
 
         stdscr.addstr(power_up['position'][0], power_up['position'][1], char)
 
@@ -236,6 +242,7 @@ def draw_game(stdscr, game_state, score_multiplier):  # Accept score_multiplier
         stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
 
     stdscr.refresh()
+
 
 
 def increase_speed(game_state):
@@ -297,6 +304,11 @@ def apply_power_up_effect(game_state, current_time):
             if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
         else:
+            # Restore speed to normal after speed boost expires.
+            if power_up['type'] == "speed":
+                 game_state.delay /= 0.8 # Restore the speed
+            elif power_up['type'] == "slow":
+                 game_state.delay /= 1.2 # Restore the speed
             game_state.power_ups.remove(power_up)
     return game_state.delay
 
