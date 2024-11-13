@@ -36,25 +36,25 @@ class GameState:
         self.delay = INITIAL_DELAY
         self.snake_body = deque([(10, 10), (10, 11)])
         self.snake_direction = curses.KEY_RIGHT
-        self.food_position = self.generate_new_item_position(food=True)
+        self.food_position = self.generate_new_item_position()
         self.power_ups: List[Dict] = []
-        self.obstacles: List[Tuple[int, int]] = [] # Changed to list of tuples
+        self.obstacles: List[Dict] = []
         self.paused = False
         self.invincible = False
         self.invincibility_end_time = 0
 
-    def generate_new_item_position(self, food=False, power_up=False):
+    def generate_new_item_position(self):
         """Generate new position for food or power-ups, avoiding collisions."""
         while True:
             new_position = (
-                random.randint(1, MAX_Y - 2),  # Switched MAX_X and MAX_Y
+                random.randint(1, MAX_Y - 2),
                 random.randint(1, MAX_X - 2),
             )
             if (
                 new_position not in self.snake_body
                 and new_position != self.food_position
-                and all(new_position != tuple(obstacle['position']) for obstacle in self.obstacles) # Access tuple within dict.
-                and all(new_position != tuple(power.get('position', ())) for power in self.power_ups) #Safeguard against missing 'position'.
+                and all(new_position != obstacle['position'] for obstacle in self.obstacles)
+                and all(new_position != power_up.get('position') for power_up in self.power_ups)
             ):
                 return new_position
 
@@ -72,13 +72,11 @@ def main(stdscr):
 
     game_state = GameState()
 
-     # Start background music AFTER initializing curses
+    # Start background music AFTER initializing curses
     play_background_music("background_music.mp3")  # Replace with your actual music file
-
 
     target_frame_time = 1.0 / FRAME_RATE
     last_frame_time = time.perf_counter()
-
 
     while True:
         current_time = time.perf_counter()
@@ -86,17 +84,15 @@ def main(stdscr):
         last_frame_time = current_time
 
         try:
+            # Handle Input (Improvement 1: consolidate input handling)
             key = stdscr.getch()
             if key == ord('q'):
                 break
             elif key == ord('p'):
                 game_state.paused = not game_state.paused
-                if game_state.paused:
-                    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused")
-                    stdscr.refresh()
-                else:  # Clear the "Paused" message when resuming
-                    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "      ") # Clear the message area
-                    stdscr.refresh()
+                stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused" if game_state.paused else "      ")  # Toggle pause message
+                stdscr.refresh() #Immediately reflect pause status
+                continue # Skip the rest of the loop if paused
 
 
             elif key == ord('c'):
@@ -111,8 +107,8 @@ def main(stdscr):
             elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
                 SNAKE_GROWTH_ON_FOOD -= 1
 
-            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT,
-                         curses.KEY_RIGHT] and not game_state.paused:
+
+            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
                 if (key, game_state.snake_direction) not in [
                     (curses.KEY_UP, curses.KEY_DOWN),
                     (curses.KEY_DOWN, curses.KEY_UP),
@@ -121,16 +117,20 @@ def main(stdscr):
                 ]:
                     game_state.snake_direction = key
 
+           # Game Logic (Improvement 2: Apply power-ups before moving)
             if elapsed_time >= game_state.delay and not game_state.paused:
 
-                new_head = move_snake(
-                    game_state.snake_body[-1], game_state.snake_direction)
+                game_state.delay = apply_power_up_effect(game_state, current_time) # Apply BEFORE moving
 
-                # Teleport (Corrected modulo operator placement)
+                new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
+
+
+                # Teleport
                 new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
 
-                if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state):
 
+                if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state):
+                    
                     game_state.food_position = game_state.generate_new_item_position(
                         food=True)
 
@@ -151,38 +151,36 @@ def main(stdscr):
 
                 else:
                     game_state.snake_body.popleft()
-                    # Apply effects BEFORE checking collisions and appending new_head
 
                 if game_state.invincible and current_time > game_state.invincibility_end_time:
                     game_state.invincible = False
 
-
-                game_state.delay = apply_power_up_effect(game_state, current_time)
+                #Append the new head after potential growth/powerup application.
                 game_state.snake_body.append(new_head)
 
 
-                if not game_state.invincible:  # Check collisions only if not invincible
+
+                if not game_state.invincible:
+                   #Check for obstacle collisions
                     for obstacle in list(game_state.obstacles):
-
-                        if check_collision(new_head, game_state.snake_body, tuple(obstacle['position']), game_state.obstacles, game_state): # Compare with tuple
-                           raise ValueError("Game Over! You hit an obstacle.")
-
+                        if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state):
+                            raise ValueError("Game Over! You hit an obstacle.")
                     if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
-                        raise ValueError("Game Over! You ran into yourself.")
+                       raise ValueError("Game Over! You ran into yourself.")
 
 
-
+                #Power-Up Pickup
                 for power_up in list(game_state.power_ups):
-
-                    if check_collision(new_head, game_state.snake_body, tuple(power_up['position']), game_state.obstacles, game_state): # Check for powerup pickup.
+                    if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state):
                         if power_up['type'] == 'invincible':
-                           game_state.invincible = True
-                           game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
+                            game_state.invincible = True
+                            game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
+                        #Note: Effects are now applied before the move.
 
-                        apply_power_up_effect(game_state, current_time) # Apply power-up effects immediately after pickup
                         game_state.power_ups.remove(power_up)
 
 
+            # Drawing and Level Updates
             stdscr.clear()
             draw_game(stdscr, game_state, score_multiplier)
             increase_speed(game_state)
@@ -193,8 +191,6 @@ def main(stdscr):
             sleep_time = target_frame_time - (time.perf_counter() - current_time)
             if sleep_time > 0:
                 time.sleep(sleep_time)
-
-
 
         except ValueError as e:
             game_over_screen(stdscr, str(e), game_state.score)
