@@ -212,10 +212,16 @@ def move_snake(position, direction):
         return position  # Don't raise an error, just return current position
 
 
-def check_collision(new_head, snake_body, target_position, obstacles, game_state): #Add obstacles and game_state arguments.
+def check_collision(new_head, snake_body, target_position, obstacles, game_state):
     """Checks for collision with target position or snake body."""
+    global score_multiplier_time, score_multiplier
 
     if new_head == target_position:
+        if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
+            score_multiplier += 1
+        else:
+            score_multiplier = 1
+        score_multiplier_time = current_time
         return True
     if new_head in list(snake_body)[:-1]: # Exclude the tail from self-collision check
         return True
