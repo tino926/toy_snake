@@ -152,7 +152,7 @@ def main(stdscr):
                 new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
 
 
-                if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state):
+                if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state, current_time):
                     
                     game_state.food_position = game_state.generate_new_item_position(
                         food=True)
@@ -186,7 +186,7 @@ def main(stdscr):
                 if not game_state.invincible:
                    #Check for obstacle collisions
                     for obstacle in list(game_state.obstacles):
-                        if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state):
+                        if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
                             raise ValueError("Game Over! You hit an obstacle.")
                     if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
                        raise ValueError("Game Over! You ran into yourself.")
@@ -194,7 +194,7 @@ def main(stdscr):
 
                 #Power-Up Pickup
                 for power_up in list(game_state.power_ups):
-                    if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state):
+                    if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state, current_time):
                         if power_up['type'] == 'invincible':
                             game_state.invincible = True
                             game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
@@ -242,7 +242,7 @@ def move_snake(position, direction):
         return position  # Don't raise an error, just return current position
 
 
-def check_collision(new_head, snake_body, target_position, obstacles, game_state):
+def check_collision(new_head, snake_body, target_position, obstacles, game_state, current_time):
     """Checks for collision with target position or snake body."""
     global score_multiplier_time, score_multiplier
 
