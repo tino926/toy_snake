@@ -4,6 +4,7 @@ import time
 from typing import List, Tuple, Dict
 import pygame
 from collections import deque
+import json
 
 # Initialize pygame mixer for sound effects
 pygame.mixer.init()
@@ -58,6 +59,17 @@ class GameState:
             ):
                 return new_position
 
+    def save_game(self, filename="savegame.json"):
+        """Save the current game state to a file."""
+        with open(filename, 'w') as f:
+            json.dump(self.__dict__, f)
+
+    def load_game(self, filename="savegame.json"):
+        """Load the game state from a file."""
+        with open(filename, 'r') as f:
+            self.__dict__ = json.load(f)
+            self.snake_body = deque(self.snake_body)  # Convert list back to deque
+
 
 def main(stdscr):
     """Main game loop."""
@@ -71,6 +83,12 @@ def main(stdscr):
     MAX_Y = min(MAX_Y, max_y - 2)
 
     game_state = GameState()
+
+    # Load game state if available
+    try:
+        game_state.load_game()
+    except FileNotFoundError:
+        pass
 
     # Start background music AFTER initializing curses
     play_background_music("background_music.mp3")  # Replace with your actual music file
@@ -106,6 +124,11 @@ def main(stdscr):
                 SNAKE_GROWTH_ON_FOOD += 1
             elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
                 SNAKE_GROWTH_ON_FOOD -= 1
+            elif key == ord('s'):
+                game_state.save_game()
+                stdscr.addstr(0, MAX_X // 2 - 5, "Game Saved")
+                stdscr.refresh()
+                time.sleep(1)
 
 
             elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
@@ -195,7 +218,14 @@ def main(stdscr):
         except ValueError as e:
             game_over_screen(stdscr, str(e), game_state.score)
             break
+        except Exception as e:
+            stdscr.addstr(0, 0, f"Error: {e}")
+            stdscr.refresh()
+            time.sleep(2)
+            break
 
+    # Save game state on exit
+    game_state.save_game()
 
 
 def move_snake(position, direction):
