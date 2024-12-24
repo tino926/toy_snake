@@ -155,8 +155,7 @@ def main(stdscr):
 
                     if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state, current_time):
                         
-                        game_state.food_position = game_state.generate_new_item_position(
-                            food=True)
+                        game_state.food_position = game_state.generate_new_item_position()
 
                         if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
                             score_multiplier += 1
