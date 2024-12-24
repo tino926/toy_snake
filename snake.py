@@ -78,154 +78,156 @@ def main(stdscr):
     stdscr.nodelay(True)
     stdscr.timeout(int(1000 / FRAME_RATE))
 
-    max_y, max_x = stdscr.getmaxyx()
-    MAX_X = min(MAX_X, max_x - 2)
-    MAX_Y = min(MAX_Y, max_y - 2)
-
-    game_state = GameState()
-
-    # Load game state if available
-    try:
-        game_state.load_game()
-    except FileNotFoundError:
-        pass
-
-    # Start background music AFTER initializing curses
-    play_background_music("background_music.mp3")  # Replace with your actual music file
-
-    target_frame_time = 1.0 / FRAME_RATE
-    last_frame_time = time.perf_counter()
-
     while True:
-        current_time = time.perf_counter()
-        elapsed_time = current_time - last_frame_time
-        last_frame_time = current_time
+        max_y, max_x = stdscr.getmaxyx()
+        MAX_X = min(MAX_X, max_x - 2)
+        MAX_Y = min(MAX_Y, max_y - 2)
 
+        game_state = GameState()
+
+        # Load game state if available
         try:
-            # Handle Input (Improvement 1: consolidate input handling)
-            key = stdscr.getch()
-            if key == ord('q'):
-                break
-            elif key == ord('p'):
-                game_state.paused = not game_state.paused
-                stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused" if game_state.paused else "      ")  # Toggle pause message
-                stdscr.refresh() #Immediately reflect pause status
-                continue # Skip the rest of the loop if paused
+            game_state.load_game()
+        except FileNotFoundError:
+            pass
+
+        # Start background music AFTER initializing curses
+        play_background_music("background_music.mp3")  # Replace with your actual music file
+
+        target_frame_time = 1.0 / FRAME_RATE
+        last_frame_time = time.perf_counter()
+
+        while True:
+            current_time = time.perf_counter()
+            elapsed_time = current_time - last_frame_time
+            last_frame_time = current_time
+
+            try:
+                # Handle Input (Improvement 1: consolidate input handling)
+                key = stdscr.getch()
+                if key == ord('q'):
+                    return
+                elif key == ord('p'):
+                    game_state.paused = not game_state.paused
+                    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused" if game_state.paused else "      ")  # Toggle pause message
+                    stdscr.refresh() #Immediately reflect pause status
+                    continue # Skip the rest of the loop if paused
 
 
-            elif key == ord('c'):
-                SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
-                message = "Snake Collision: ON" if SNAKE_COLLISION_ENABLED else "Snake Collision: OFF"
-                stdscr.addstr(0, MAX_X // 2 - len(message) // 2, message)
-                stdscr.timeout(0)  # Non-blocking getch() for the pause
-                stdscr.getch()  # Wait for any key press
-                stdscr.timeout(int(1000/FRAME_RATE))  # Restore timeout for game loop
-            elif key == ord('+') and SNAKE_GROWTH_ON_FOOD < 5:
-                SNAKE_GROWTH_ON_FOOD += 1
-            elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
-                SNAKE_GROWTH_ON_FOOD -= 1
-            elif key == ord('s'):
-                game_state.save_game()
-                stdscr.addstr(0, MAX_X // 2 - 5, "Game Saved")
-                stdscr.refresh()
-                time.sleep(1)
+                elif key == ord('c'):
+                    SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
+                    message = "Snake Collision: ON" if SNAKE_COLLISION_ENABLED else "Snake Collision: OFF"
+                    stdscr.addstr(0, MAX_X // 2 - len(message) // 2, message)
+                    stdscr.timeout(0)  # Non-blocking getch() for the pause
+                    stdscr.getch()  # Wait for any key press
+                    stdscr.timeout(int(1000/FRAME_RATE))  # Restore timeout for game loop
+                elif key == ord('+') and SNAKE_GROWTH_ON_FOOD < 5:
+                    SNAKE_GROWTH_ON_FOOD += 1
+                elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
+                    SNAKE_GROWTH_ON_FOOD -= 1
+                elif key == ord('s'):
+                    game_state.save_game()
+                    stdscr.addstr(0, MAX_X // 2 - 5, "Game Saved")
+                    stdscr.refresh()
+                    time.sleep(1)
 
 
-            elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
-                if (key, game_state.snake_direction) not in [
-                    (curses.KEY_UP, curses.KEY_DOWN),
-                    (curses.KEY_DOWN, curses.KEY_UP),
-                    (curses.KEY_LEFT, curses.KEY_RIGHT),
-                    (curses.KEY_RIGHT, curses.KEY_LEFT),
-                ]:
-                    game_state.snake_direction = key
+                elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
+                    if (key, game_state.snake_direction) not in [
+                        (curses.KEY_UP, curses.KEY_DOWN),
+                        (curses.KEY_DOWN, curses.KEY_UP),
+                        (curses.KEY_LEFT, curses.KEY_RIGHT),
+                        (curses.KEY_RIGHT, curses.KEY_LEFT),
+                    ]:
+                        game_state.snake_direction = key
 
-           # Game Logic (Improvement 2: Apply power-ups before moving)
-            if elapsed_time >= game_state.delay and not game_state.paused:
+            # Game Logic (Improvement 2: Apply power-ups before moving)
+                if elapsed_time >= game_state.delay and not game_state.paused:
 
-                game_state.delay = apply_power_up_effect(game_state, current_time) # Apply BEFORE moving
+                    game_state.delay = apply_power_up_effect(game_state, current_time) # Apply BEFORE moving
 
-                new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
-
-
-                # Teleport
-                new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
+                    new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
 
 
-                if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state, current_time):
-                    
-                    game_state.food_position = game_state.generate_new_item_position(
-                        food=True)
+                    # Teleport
+                    new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
 
-                    if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
-                        score_multiplier += 1
+
+                    if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state, current_time):
+                        
+                        game_state.food_position = game_state.generate_new_item_position(
+                            food=True)
+
+                        if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
+                            score_multiplier += 1
+                        else:
+                            score_multiplier = 1
+                        score_multiplier_time = current_time
+
+                        game_state.score += 1 * score_multiplier
+                        for _ in range(SNAKE_GROWTH_ON_FOOD):
+                            game_state.snake_body.append(game_state.snake_body[-1])
+
+
+                        if random.random() < 0.15:
+                            game_state.power_ups.append(
+                                generate_power_up(current_time, game_state))
+
                     else:
-                        score_multiplier = 1
-                    score_multiplier_time = current_time
+                        game_state.snake_body.popleft()
 
-                    game_state.score += 1 * score_multiplier
-                    for _ in range(SNAKE_GROWTH_ON_FOOD):
-                        game_state.snake_body.append(game_state.snake_body[-1])
+                    if game_state.invincible and current_time > game_state.invincibility_end_time:
+                        game_state.invincible = False
 
-
-                    if random.random() < 0.15:
-                        game_state.power_ups.append(
-                            generate_power_up(current_time, game_state))
-
-                else:
-                    game_state.snake_body.popleft()
-
-                if game_state.invincible and current_time > game_state.invincibility_end_time:
-                    game_state.invincible = False
-
-                #Append the new head after potential growth/powerup application.
-                game_state.snake_body.append(new_head)
+                    #Append the new head after potential growth/powerup application.
+                    game_state.snake_body.append(new_head)
 
 
 
-                if not game_state.invincible:
-                   #Check for obstacle collisions
-                    for obstacle in list(game_state.obstacles):
-                        if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
-                            raise ValueError("Game Over! You hit an obstacle.")
-                    if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
-                       raise ValueError("Game Over! You ran into yourself.")
+                    if not game_state.invincible:
+                    #Check for obstacle collisions
+                        for obstacle in list(game_state.obstacles):
+                            if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
+                                raise ValueError("Game Over! You hit an obstacle.")
+                        if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
+                            raise ValueError("Game Over! You ran into yourself.")
 
 
-                #Power-Up Pickup
-                for power_up in list(game_state.power_ups):
-                    if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state, current_time):
-                        if power_up['type'] == 'invincible':
-                            game_state.invincible = True
-                            game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
-                        #Note: Effects are now applied before the move.
+                    #Power-Up Pickup
+                    for power_up in list(game_state.power_ups):
+                        if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state, current_time):
+                            if power_up['type'] == 'invincible':
+                                game_state.invincible = True
+                                game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
+                            #Note: Effects are now applied before the move.
 
-                        game_state.power_ups.remove(power_up)
-
-
-            # Drawing and Level Updates
-            stdscr.clear()
-            draw_game(stdscr, game_state, score_multiplier)
-            increase_speed(game_state)
-            check_level(game_state)
+                            game_state.power_ups.remove(power_up)
 
 
+                # Drawing and Level Updates
+                stdscr.clear()
+                draw_game(stdscr, game_state, score_multiplier)
+                increase_speed(game_state)
+                check_level(game_state)
 
-            sleep_time = target_frame_time - (time.perf_counter() - current_time)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
 
-        except ValueError as e:
-            game_over_screen(stdscr, str(e), game_state.score)
-            break
-        except Exception as e:
-            stdscr.addstr(0, 0, f"Error: {e}")
-            stdscr.refresh()
-            time.sleep(2)
-            break
 
-    # Save game state on exit
-    game_state.save_game()
+                sleep_time = target_frame_time - (time.perf_counter() - current_time)
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+
+            except ValueError as e:
+                if not game_over_screen(stdscr, str(e), game_state.score):
+                    return  # Exit the game if the player chooses not to restart
+                break  # Restart the game loop
+            except Exception as e:
+                stdscr.addstr(0, 0, f"Error: {e}")
+                stdscr.refresh()
+                time.sleep(2)
+                break
+
+        # Save game state on exit
+        game_state.save_game()
 
 
 def move_snake(position, direction):
@@ -310,14 +312,18 @@ def game_over(new_head, snake_body):
 
 
 def game_over_screen(stdscr, message, score):
-    """Displays the game over screen."""
+    """Displays the game over screen and asks the player if they want to restart."""
     stdscr.clear()
     stdscr.addstr(MAX_Y // 2, MAX_X // 2 - len(message) // 2, message)
     stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 - len(str(score)) // 2, f"Score: {score}")
+    stdscr.addstr(MAX_Y // 2 + 2, MAX_X // 2 - 10, "Press 'r' to restart or 'q' to quit")
     stdscr.refresh()
-    stdscr.getch()
-
-
+    while True:
+        key = stdscr.getch()
+        if key == ord('r'):
+            return True  # Restart the game
+        elif key == ord('q'):
+            return False  # Quit the game
 
 
 def apply_power_up_effect(game_state, current_time):
@@ -349,10 +355,13 @@ def apply_power_up_effect(game_state, current_time):
 
 
 def generate_power_up(current_time, game_state):
-    """Generates a power-up with a position avoiding other objects."""
-
+    """Generates a power-up with a position avoiding other objects and too close to the snake's head."""
+    while True:
+        position = game_state.generate_new_item_position()
+        if abs(position[0] - game_state.snake_body[-1][0]) > 2 and abs(position[1] - game_state.snake_body[-1][1]) > 2:
+            break
     power_up_type = random.choice(POWER_UP_TYPES + ['invincible'])
-    return {'position': game_state.generate_new_item_position(power_up=True), 'type': power_up_type}
+    return {'position': position, 'type': power_up_type}
 
 
 def play_background_music(music_file):
