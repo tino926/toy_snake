@@ -30,6 +30,22 @@ score_multiplier = 1
 # Invincibility Power-Up
 INVINCIBILITY_DURATION = 3  # Seconds
 
+# High Score
+HIGH_SCORE_FILE = "highscore.json"
+
+def load_high_score():
+    """Load the high score from a file."""
+    try:
+        with open(HIGH_SCORE_FILE, 'r') as f:
+            return json.load(f).get('high_score', 0)
+    except FileNotFoundError:
+        return 0
+
+def save_high_score(high_score):
+    """Save the high score to a file."""
+    with open(HIGH_SCORE_FILE, 'w') as f:
+        json.dump({'high_score': high_score}, f)
+
 class GameState:
     def __init__(self):
         self.score = 0
@@ -43,6 +59,7 @@ class GameState:
         self.paused = False
         self.invincible = False
         self.invincibility_end_time = 0
+        self.high_score = load_high_score()
 
     def generate_new_item_position(self):
         """Generate new position for food or power-ups, avoiding collisions."""
@@ -216,6 +233,9 @@ def main(stdscr):
                     time.sleep(sleep_time)
 
             except ValueError as e:
+                if game_state.score > game_state.high_score:
+                    game_state.high_score = game_state.score
+                    save_high_score(game_state.high_score)
                 if not game_over_screen(stdscr, str(e), game_state.score):
                     return  # Exit the game if the player chooses not to restart
                 break  # Restart the game loop
@@ -262,7 +282,7 @@ def check_collision(new_head, snake_body, target_position, obstacles, game_state
 
 def draw_game(stdscr, game_state, score_multiplier):
     """Draws the game elements."""
-    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier}")
+    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier} High Score: {game_state.high_score}")
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
@@ -274,7 +294,8 @@ def draw_game(stdscr, game_state, score_multiplier):
             'grow': 'G',
             'slow': 'L',
             'obstacle_remove': 'R',
-            'invincible': 'I'
+            'invincible': 'I',
+            'multiplier': 'M'
         }.get(power_up['type'], '?')
        stdscr.addstr(power_up['position'][0], power_up['position'][1], char)
 
@@ -339,6 +360,9 @@ def apply_power_up_effect(game_state, current_time):
             elif power_up['type'] == "obstacle_remove":
                 if game_state.obstacles:
                     game_state.obstacles.pop(random.randrange(len(game_state.obstacles)))
+            elif power_up['type'] == "multiplier":
+                global score_multiplier
+                score_multiplier *= 2  # Double the score multiplier
             # Add expiration time if it doesn't exist
             if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
@@ -347,6 +371,8 @@ def apply_power_up_effect(game_state, current_time):
                 game_state.delay /= 0.8  # Restore speed
             elif power_up['type'] == "slow":
                 game_state.delay /= 1.2  # Restore speed
+            elif power_up['type'] == "multiplier":
+                score_multiplier /= 2  # Restore score multiplier
             game_state.power_ups.remove(power_up) # Remove expired power-up
 
     return game_state.delay
@@ -359,7 +385,7 @@ def generate_power_up(current_time, game_state):
         position = game_state.generate_new_item_position()
         if abs(position[0] - game_state.snake_body[-1][0]) > 2 and abs(position[1] - game_state.snake_body[-1][1]) > 2:
             break
-    power_up_type = random.choice(POWER_UP_TYPES + ['invincible'])
+    power_up_type = random.choice(POWER_UP_TYPES + ['invincible', 'multiplier'])
     return {'position': position, 'type': power_up_type}
 
 
