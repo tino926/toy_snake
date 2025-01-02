@@ -33,6 +33,14 @@ INVINCIBILITY_DURATION = 3  # Seconds
 # High Score
 HIGH_SCORE_FILE = "highscore.json"
 
+SOUND_EFFECTS = {
+    'food': 'food.wav',
+    'power_up': 'power_up.wav',
+    'collision': 'collision.wav'
+}
+FLASH_DURATION = 0.2  # seconds
+FLASH_COLORS = [curses.A_NORMAL, curses.A_REVERSE]
+
 def load_high_score():
     """Load the high score from a file."""
     try:
@@ -206,6 +214,8 @@ def main(stdscr):
                             if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
                                 raise ValueError("Game Over! You hit an obstacle.")
                         if SNAKE_COLLISION_ENABLED and game_over(new_head, game_state.snake_body):
+                            play_sound_effect('collision')
+                            flash_effect(stdscr, new_head)
                             raise ValueError("Game Over! You ran into yourself.")
 
 
@@ -268,6 +278,7 @@ def check_collision(new_head, snake_body, target_position, obstacles, game_state
     global score_multiplier_time, score_multiplier
 
     if new_head == target_position:
+        play_sound_effect('food')
         if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
             score_multiplier += 1
         else:
@@ -350,6 +361,7 @@ def apply_power_up_effect(game_state, current_time):
     """Applies power-up effects and updates the game state."""
     for power_up in list(game_state.power_ups):
         if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:
+            play_sound_effect('power_up')
             if power_up['type'] == "speed":
                 game_state.delay *= 0.8
             elif power_up['type'] == "grow":
@@ -397,7 +409,24 @@ def play_background_music(music_file):
     except Exception as e:  # Catch any exception during music playback
         print(f"Error playing background music: {e}")
 
+def play_sound_effect(effect_type):
+    """Play a specific sound effect."""
+    try:
+        sound = pygame.mixer.Sound(SOUND_EFFECTS.get(effect_type))
+        sound.play()
+    except Exception:
+        pass  # Silently fail if sound file is missing
 
+def flash_effect(stdscr, position, duration=FLASH_DURATION):
+    """Create a flashing effect at the given position."""
+    start_time = time.perf_counter()
+    while time.perf_counter() - start_time < duration:
+        for attr in FLASH_COLORS:
+            stdscr.attron(attr)
+            stdscr.addstr(position[0], position[1], "#")
+            stdscr.attroff(attr)
+            stdscr.refresh()
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     curses.wrapper(main)
