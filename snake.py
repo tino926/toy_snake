@@ -42,8 +42,16 @@ FLASH_DURATION = 0.2  # seconds
 FLASH_COLORS = [curses.A_NORMAL, curses.A_REVERSE]
 
 SPECIAL_FOOD_TYPES = {
-    'golden': {'char': '$', 'points': 5, 'probability': 0.1},
-    'poison': {'char': '!', 'points': -2, 'probability': 0.15}
+    'golden': {
+        'char': '$', 
+        'points': 5, 
+        'probability': 0.1
+    },
+    'poison': {
+        'char': '!', 
+        'points': -2, 
+        'probability': 0.15
+    }
 }
 
 def load_high_score():
@@ -286,7 +294,14 @@ def move_snake(position, direction):
         return position  # Don't raise an error, just return current position
 
 
-def check_collision(new_head, snake_body, target_position, obstacles, game_state, current_time):
+def check_collision(
+    new_head, 
+    snake_body, 
+    target_position, 
+    obstacles, 
+    game_state, 
+    current_time
+):
     """Checks for collision with target position or snake body."""
     global score_multiplier_time, score_multiplier
 
@@ -296,7 +311,8 @@ def check_collision(new_head, snake_body, target_position, obstacles, game_state
             points = SPECIAL_FOOD_TYPES[game_state.food_type]['points']
             game_state.score += points
         else:
-            if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
+            if (score_multiplier_time and 
+                current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW):
                 score_multiplier += 1
             else:
                 score_multiplier = 1
@@ -311,32 +327,43 @@ def check_collision(new_head, snake_body, target_position, obstacles, game_state
 
 def draw_game(stdscr, game_state, score_multiplier):
     """Draws the game elements."""
-    stdscr.addstr(0, 0, f"Score: {game_state.score} Level: {game_state.level} Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier} High Score: {game_state.high_score}")
+    status = (
+        f"Score: {game_state.score} Level: {game_state.level} "
+        f"Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier} "
+        f"High Score: {game_state.high_score}"
+    )
+    stdscr.addstr(0, 0, status)
+
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
+    
     if game_state.food_position:
         food_char = '*'
         if game_state.food_type in SPECIAL_FOOD_TYPES:
             food_char = SPECIAL_FOOD_TYPES[game_state.food_type]['char']
-        stdscr.addstr(game_state.food_position[0], game_state.food_position[1], food_char)
+        stdscr.addstr(
+            game_state.food_position[0], 
+            game_state.food_position[1], 
+            food_char
+        )
+
+    power_up_chars = {
+        'speed': 'S',
+        'grow': 'G',
+        'slow': 'L',
+        'obstacle_remove': 'R',
+        'invincible': 'I',
+        'multiplier': 'M'
+    }
 
     for power_up in game_state.power_ups:
-       char = {
-            'speed': 'S',
-            'grow': 'G',
-            'slow': 'L',
-            'obstacle_remove': 'R',
-            'invincible': 'I',
-            'multiplier': 'M'
-        }.get(power_up['type'], '?')
-       stdscr.addstr(power_up['position'][0], power_up['position'][1], char)
-
+        char = power_up_chars.get(power_up['type'], '?')
+        stdscr.addstr(power_up['position'][0], power_up['position'][1], char)
 
     for obstacle in game_state.obstacles:
-       stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
+        stdscr.addstr(obstacle['position'][0], obstacle['position'][1], "O")
 
     stdscr.refresh()
-
 
 
 def increase_speed(game_state):
@@ -366,16 +393,28 @@ def game_over(new_head, snake_body):
 def game_over_screen(stdscr, message, score):
     """Displays the game over screen and asks the player if they want to restart."""
     stdscr.clear()
-    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - len(message) // 2, message)
-    stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 - len(str(score)) // 2, f"Score: {score}")
-    stdscr.addstr(MAX_Y // 2 + 2, MAX_X // 2 - 10, "Press 'r' to restart or 'q' to quit")
+    center_y = MAX_Y // 2
+    center_x = MAX_X // 2
+    
+    stdscr.addstr(center_y, center_x - len(message) // 2, message)
+    stdscr.addstr(
+        center_y + 1, 
+        center_x - len(str(score)) // 2, 
+        f"Score: {score}"
+    )
+    stdscr.addstr(
+        center_y + 2, 
+        center_x - 10, 
+        "Press 'r' to restart or 'q' to quit"
+    )
     stdscr.refresh()
+    
     while True:
         key = stdscr.getch()
         if key == ord('r'):
-            return True  # Restart the game
+            return True
         elif key == ord('q'):
-            return False  # Quit the game
+            return False
 
 
 def apply_power_up_effect(game_state, current_time):
