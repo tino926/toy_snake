@@ -41,6 +41,11 @@ SOUND_EFFECTS = {
 FLASH_DURATION = 0.2  # seconds
 FLASH_COLORS = [curses.A_NORMAL, curses.A_REVERSE]
 
+SPECIAL_FOOD_TYPES = {
+    'golden': {'char': '$', 'points': 5, 'probability': 0.1},
+    'poison': {'char': '!', 'points': -2, 'probability': 0.15}
+}
+
 def load_high_score():
     """Load the high score from a file."""
     try:
@@ -68,6 +73,7 @@ class GameState:
         self.invincible = False
         self.invincibility_end_time = 0
         self.high_score = load_high_score()
+        self.food_type = 'normal'
 
     def generate_new_item_position(self):
         """Generate new position for food or power-ups, avoiding collisions."""
@@ -82,6 +88,13 @@ class GameState:
                 and all(new_position != obstacle['position'] for obstacle in self.obstacles)
                 and all(new_position != power_up.get('position') for power_up in self.power_ups)
             ):
+                rand = random.random()
+                for food_type, props in SPECIAL_FOOD_TYPES.items():
+                    if rand < props['probability']:
+                        self.food_type = food_type
+                        break
+                else:
+                    self.food_type = 'normal'
                 return new_position
 
     def save_game(self, filename="savegame.json"):
@@ -133,11 +146,11 @@ def main(stdscr):
                 if key == ord('q'):
                     return
                 elif key == ord('p'):
-                    game_state.paused = not game_state.paused
-                    stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 4, "Paused" if game_state.paused else "      ")  # Toggle pause message
-                    stdscr.refresh() #Immediately reflect pause status
-                    continue # Skip the rest of the loop if paused
-
+                    game_state.paused = True
+                    if not pause_menu(stdscr, game_state):
+                        return  # Quit game
+                    game_state.paused = False
+                    continue
 
                 elif key == ord('c'):
                     SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
@@ -279,11 +292,16 @@ def check_collision(new_head, snake_body, target_position, obstacles, game_state
 
     if new_head == target_position:
         play_sound_effect('food')
-        if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
-            score_multiplier += 1
+        if game_state.food_type in SPECIAL_FOOD_TYPES:
+            points = SPECIAL_FOOD_TYPES[game_state.food_type]['points']
+            game_state.score += points
         else:
-            score_multiplier = 1
-        score_multiplier_time = current_time
+            if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
+                score_multiplier += 1
+            else:
+                score_multiplier = 1
+            score_multiplier_time = current_time
+            game_state.score += 1 * score_multiplier
         return True
     if new_head in list(snake_body)[:-1]: # Exclude the tail from self-collision check
         return True
@@ -297,7 +315,10 @@ def draw_game(stdscr, game_state, score_multiplier):
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
     if game_state.food_position:
-        stdscr.addstr(game_state.food_position[0], game_state.food_position[1], "*")
+        food_char = '*'
+        if game_state.food_type in SPECIAL_FOOD_TYPES:
+            food_char = SPECIAL_FOOD_TYPES[game_state.food_type]['char']
+        stdscr.addstr(game_state.food_position[0], game_state.food_position[1], food_char)
 
     for power_up in game_state.power_ups:
        char = {
@@ -427,6 +448,52 @@ def flash_effect(stdscr, position, duration=FLASH_DURATION):
             stdscr.attroff(attr)
             stdscr.refresh()
             time.sleep(0.1)
+
+def pause_menu(stdscr, game_state):
+    """Display an improved pause menu with options."""
+    menu_items = [
+        "Resume Game",
+        "Save Game",
+        "Toggle Collision",
+        "Adjust Growth Rate",
+        "Quit Game"
+    ]
+    current_item = 0
+    
+    while True:
+        stdscr.clear()
+        for i, item in enumerate(menu_items):
+            x = MAX_X // 2 - len(item) // 2
+            y = MAX_Y // 2 - len(menu_items) // 2 + i
+            if i == current_item:
+                stdscr.attron(curses.A_REVERSE)
+            stdscr.addstr(y, x, item)
+            if i == current_item:
+                stdscr.attroff(curses.A_REVERSE)
+        
+        key = stdscr.getch()
+        if key == curses.KEY_UP:
+            current_item = (current_item - 1) % len(menu_items)
+        elif key == curses.KEY_DOWN:
+            current_item = (current_item + 1) % len(menu_items)
+        elif key == ord('\n'):  # Enter key
+            if current_item == 0:  # Resume
+                return True
+            elif current_item == 1:  # Save
+                game_state.save_game()
+                stdscr.addstr(MAX_Y-1, 0, "Game Saved!")
+                stdscr.refresh()
+                time.sleep(1)
+            elif current_item == 2:  # Toggle Collision
+                global SNAKE_COLLISION_ENABLED
+                SNAKE_COLLISION_ENABLED = not SNAKE_COLLISION_ENABLED
+            elif current_item == 3:  # Adjust Growth
+                global SNAKE_GROWTH_ON_FOOD
+                SNAKE_GROWTH_ON_FOOD = (SNAKE_GROWTH_ON_FOOD % 5) + 1
+            elif current_item == 4:  # Quit
+                return False
+        elif key == ord('p'):  # Resume on 'p' key
+            return True
 
 if __name__ == "__main__":
     curses.wrapper(main)
