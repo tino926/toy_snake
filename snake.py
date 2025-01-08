@@ -90,12 +90,7 @@ class GameState:
                 random.randint(1, MAX_Y - 2),
                 random.randint(1, MAX_X - 2),
             )
-            if (
-                new_position not in self.snake_body
-                and new_position != self.food_position
-                and all(new_position != obstacle['position'] for obstacle in self.obstacles)
-                and all(new_position != power_up.get('position') for power_up in self.power_ups)
-            ):
+            if self.is_position_valid(new_position):
                 rand = random.random()
                 for food_type, props in SPECIAL_FOOD_TYPES.items():
                     if rand < props['probability']:
@@ -104,6 +99,15 @@ class GameState:
                 else:
                     self.food_type = 'normal'
                 return new_position
+
+    def is_position_valid(self, position):
+        """Check if the position is valid (no collisions)."""
+        return (
+            position not in self.snake_body
+            and position != self.food_position
+            and all(position != obstacle['position'] for obstacle in self.obstacles)
+            and all(position != power_up.get('position') for power_up in self.power_ups)
+        )
 
     def save_game(self, filename="savegame.json"):
         """Save the current game state to a file."""
@@ -422,36 +426,44 @@ def apply_power_up_effect(game_state, current_time):
     for power_up in list(game_state.power_ups):
         if 'expiration_time' not in power_up or power_up['expiration_time'] > current_time:
             play_sound_effect('power_up')
-            if power_up['type'] == "speed":
-                game_state.delay *= 0.8
-            elif power_up['type'] == "grow":
-                for _ in range(3):  # Grow snake by 3 units
-                    game_state.snake_body.appendleft(game_state.snake_body[0])
-            elif power_up['type'] == "slow":
-                game_state.delay *= 1.2
-            elif power_up['type'] == "obstacle_remove":
-                if game_state.obstacles:
-                    game_state.obstacles.pop(random.randrange(len(game_state.obstacles)))
-            elif power_up['type'] == "multiplier":
-                global score_multiplier
-                score_multiplier *= 2  # Double the score multiplier
-            elif power_up['type'] == "shrink":
-                if len(game_state.snake_body) > 3:
-                    for _ in range(3):  # Shrink snake by 3 units
-                        game_state.snake_body.popleft()
-            # Add expiration time if it doesn't exist
+            handle_power_up(game_state, power_up)
             if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
-        else: # Expired power-ups:
-            if power_up['type'] == "speed":
-                game_state.delay /= 0.8  # Restore speed
-            elif power_up['type'] == "slow":
-                game_state.delay /= 1.2  # Restore speed
-            elif power_up['type'] == "multiplier":
-                score_multiplier /= 2  # Restore score multiplier
-            game_state.power_ups.remove(power_up) # Remove expired power-up
+        else:  # Expired power-ups:
+            restore_power_up(game_state, power_up)
+            game_state.power_ups.remove(power_up)  # Remove expired power-up
 
     return game_state.delay
+
+def handle_power_up(game_state, power_up):
+    """Handle the effect of a power-up."""
+    if power_up['type'] == "speed":
+        game_state.delay *= 0.8
+    elif power_up['type'] == "grow":
+        for _ in range(3):  # Grow snake by 3 units
+            game_state.snake_body.appendleft(game_state.snake_body[0])
+    elif power_up['type'] == "slow":
+        game_state.delay *= 1.2
+    elif power_up['type'] == "obstacle_remove":
+        if game_state.obstacles:
+            game_state.obstacles.pop(random.randrange(len(game_state.obstacles)))
+    elif power_up['type'] == "multiplier":
+        global score_multiplier
+        score_multiplier *= 2  # Double the score multiplier
+    elif power_up['type'] == "shrink":
+        if len(game_state.snake_body) > 3:
+            for _ in range(3):  # Shrink snake by 3 units
+                game_state.snake_body.popleft()
+
+def restore_power_up(game_state, power_up):
+    """Restore the effect of an expired power-up."""
+    if power_up['type'] == "speed":
+        game_state.delay /= 0.8  # Restore speed
+    elif power_up['type'] == "slow":
+        game_state.delay /= 1.2  # Restore speed
+    elif power_up['type'] == "multiplier":
+        global score_multiplier
+        score_multiplier /= 2  # Restore score multiplier
 
 
 def generate_power_up(current_time, game_state):
