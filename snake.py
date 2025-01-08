@@ -13,7 +13,7 @@ pygame.mixer.init()
 MAX_X = 40
 MAX_Y = 20
 FRAME_RATE = 30
-POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove']
+POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove', 'shrink']
 POINTS_PER_LEVEL = 10
 SPEED_INCREASE_PER_LEVEL = 0.9
 INITIAL_DELAY = 0.1
@@ -435,6 +435,10 @@ def apply_power_up_effect(game_state, current_time):
             elif power_up['type'] == "multiplier":
                 global score_multiplier
                 score_multiplier *= 2  # Double the score multiplier
+            elif power_up['type'] == "shrink":
+                if len(game_state.snake_body) > 3:
+                    for _ in range(3):  # Shrink snake by 3 units
+                        game_state.snake_body.popleft()
             # Add expiration time if it doesn't exist
             if 'expiration_time' not in power_up:
                 power_up['expiration_time'] = current_time + POWER_UP_DURATION
@@ -448,7 +452,6 @@ def apply_power_up_effect(game_state, current_time):
             game_state.power_ups.remove(power_up) # Remove expired power-up
 
     return game_state.delay
-
 
 
 def generate_power_up(current_time, game_state):
@@ -495,6 +498,7 @@ def pause_menu(stdscr, game_state):
         "Save Game",
         "Toggle Collision",
         "Adjust Growth Rate",
+        "Adjust Volume",
         "Quit Game"
     ]
     current_item = 0
@@ -529,10 +533,30 @@ def pause_menu(stdscr, game_state):
             elif current_item == 3:  # Adjust Growth
                 global SNAKE_GROWTH_ON_FOOD
                 SNAKE_GROWTH_ON_FOOD = (SNAKE_GROWTH_ON_FOOD % 5) + 1
-            elif current_item == 4:  # Quit
+            elif current_item == 4:  # Adjust Volume
+                adjust_volume(stdscr)
+            elif current_item == 5:  # Quit
                 return False
         elif key == ord('p'):  # Resume on 'p' key
             return True
+
+def adjust_volume(stdscr):
+    """Adjust the game volume."""
+    volume = pygame.mixer.music.get_volume()
+    while True:
+        stdscr.clear()
+        stdscr.addstr(MAX_Y // 2, MAX_X // 2 - 10, f"Volume: {int(volume * 100)}%")
+        stdscr.addstr(MAX_Y // 2 + 1, MAX_X // 2 - 15, "Use '+' or '-' to adjust, 'Enter' to confirm")
+        stdscr.refresh()
+        
+        key = stdscr.getch()
+        if key == ord('+') and volume < 1.0:
+            volume += 0.1
+        elif key == ord('-') and volume > 0.0:
+            volume -= 0.1
+        elif key == ord('\n'):
+            pygame.mixer.music.set_volume(volume)
+            return
 
 if __name__ == "__main__":
     curses.wrapper(main)
