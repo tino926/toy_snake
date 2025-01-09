@@ -322,7 +322,7 @@ def check_collision(
                 score_multiplier = 1
             score_multiplier_time = current_time
             game_state.score += 1 * score_multiplier
-        return True
+        return False  # Fix: should return False to indicate no collision with snake body
     if new_head in list(snake_body)[:-1]: # Exclude the tail from self-collision check
         return True
 
@@ -434,6 +434,7 @@ def apply_power_up_effect(game_state, current_time):
             game_state.power_ups.remove(power_up)  # Remove expired power-up
 
     return game_state.delay
+
 
 def handle_power_up(game_state, power_up):
     """Handle the effect of a power-up."""
