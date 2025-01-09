@@ -285,7 +285,7 @@ def main(stdscr):
 
 
 def move_snake(position, direction):
-    """Moves the snake."""
+    """Moves the snake in the specified direction."""
     if direction == curses.KEY_DOWN:
         return position[0] + 1, position[1]
     elif direction == curses.KEY_UP:
@@ -330,7 +330,7 @@ def check_collision(
 
 
 def draw_game(stdscr, game_state, score_multiplier):
-    """Draws the game elements."""
+    """Draws the game elements on the screen."""
     status = (
         f"Score: {game_state.score} Level: {game_state.level} "
         f"Growth: {SNAKE_GROWTH_ON_FOOD} Multiplier: {score_multiplier} "
@@ -371,7 +371,7 @@ def draw_game(stdscr, game_state, score_multiplier):
 
 
 def increase_speed(game_state):
-    """Increases speed based on level."""
+    """Increases the game speed based on the current level."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
         game_state.delay = max(0.05, game_state.delay * SPEED_INCREASE_PER_LEVEL)
@@ -384,7 +384,7 @@ def check_level(game_state):
 
 
 def generate_obstacle(game_state):
-    """Generates an obstacle, avoiding collisions."""
+    """Generates an obstacle, avoiding collisions with other objects."""
     return {'position': game_state.generate_new_item_position(), 'type': random.choice(['small', 'large'])}
 
 
