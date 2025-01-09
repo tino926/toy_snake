@@ -1,7 +1,7 @@
 import curses
 import random
 import time
-from typing import List, Tuple, Dict
+from typing import List, Dict
 import pygame
 from collections import deque
 import json
@@ -43,13 +43,13 @@ FLASH_COLORS = [curses.A_NORMAL, curses.A_REVERSE]
 
 SPECIAL_FOOD_TYPES = {
     'golden': {
-        'char': '$', 
-        'points': 5, 
+        'char': '$',
+        'points': 5,
         'probability': 0.1
     },
     'poison': {
-        'char': '!', 
-        'points': -2, 
+        'char': '!',
+        'points': -2,
         'probability': 0.15
     }
 }
@@ -120,10 +120,10 @@ class GameState:
             self.__dict__ = json.load(f)
             self.snake_body = deque(self.snake_body)  # Convert list back to deque
 
-
 def main(stdscr):
     """Main game loop."""
-    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD, score_multiplier_time, score_multiplier
+    global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD
+    global score_multiplier_time, score_multiplier
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(int(1000 / FRAME_RATE))
@@ -170,7 +170,7 @@ def main(stdscr):
                     stdscr.addstr(0, MAX_X // 2 - len(message) // 2, message)
                     stdscr.timeout(0)  # Non-blocking getch() for the pause
                     stdscr.getch()  # Wait for any key press
-                    stdscr.timeout(int(1000/FRAME_RATE))  # Restore timeout for game loop
+                    stdscr.timeout(int(1000 / FRAME_RATE))  # Restore timeout for game loop
                 elif key == ord('+') and SNAKE_GROWTH_ON_FOOD < 5:
                     SNAKE_GROWTH_ON_FOOD += 1
                 elif key == ord('-') and SNAKE_GROWTH_ON_FOOD > 1:
@@ -181,7 +181,6 @@ def main(stdscr):
                     stdscr.refresh()
                     time.sleep(1)
 
-
                 elif key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT] and not game_state.paused:
                     if (key, game_state.snake_direction) not in [
                         (curses.KEY_UP, curses.KEY_DOWN),
@@ -191,20 +190,16 @@ def main(stdscr):
                     ]:
                         game_state.snake_direction = key
 
-            # Game Logic (Improvement 2: Apply power-ups before moving)
+                # Game Logic (Improvement 2: Apply power-ups before moving)
                 if elapsed_time >= game_state.delay and not game_state.paused:
-
-                    game_state.delay = apply_power_up_effect(game_state, current_time) # Apply BEFORE moving
+                    game_state.delay = apply_power_up_effect(game_state, current_time)  # Apply BEFORE moving
 
                     new_head = move_snake(game_state.snake_body[-1], game_state.snake_direction)
-
 
                     # Teleport
                     new_head = (new_head[0] % MAX_Y, new_head[1] % MAX_X)
 
-
                     if check_collision(new_head, game_state.snake_body, game_state.food_position, game_state.obstacles, game_state, current_time):
-                        
                         game_state.food_position = game_state.generate_new_item_position()
 
                         if score_multiplier_time and current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW:
@@ -217,10 +212,8 @@ def main(stdscr):
                         for _ in range(SNAKE_GROWTH_ON_FOOD):
                             game_state.snake_body.append(game_state.snake_body[-1])
 
-
                         if random.random() < 0.15:
-                            game_state.power_ups.append(
-                                generate_power_up(current_time, game_state))
+                            game_state.power_ups.append(generate_power_up(current_time, game_state))
 
                     else:
                         game_state.snake_body.popleft()
@@ -231,10 +224,8 @@ def main(stdscr):
                     # Append the new head after potential growth/powerup application.
                     game_state.snake_body.append(new_head)
 
-
-
                     if not game_state.invincible:
-                    # Check for obstacle collisions
+                        # Check for obstacle collisions
                         for obstacle in list(game_state.obstacles):
                             if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
                                 raise ValueError("Game Over! You hit an obstacle.")
@@ -243,7 +234,6 @@ def main(stdscr):
                             flash_effect(stdscr, new_head)
                             raise ValueError("Game Over! You ran into yourself.")
 
-
                     # Power-Up Pickup
                     for power_up in list(game_state.power_ups):
                         if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state, current_time):
@@ -251,17 +241,13 @@ def main(stdscr):
                                 game_state.invincible = True
                                 game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
                             # Note: Effects are now applied before the move.
-
                             game_state.power_ups.remove(power_up)
-
 
                 # Drawing and Level Updates
                 stdscr.clear()
                 draw_game(stdscr, game_state, score_multiplier)
                 increase_speed(game_state)
                 check_level(game_state)
-
-
 
                 sleep_time = target_frame_time - (time.perf_counter() - current_time)
                 if sleep_time > 0:
@@ -283,7 +269,6 @@ def main(stdscr):
         # Save game state on exit
         game_state.save_game()
 
-
 def move_snake(position, direction):
     """Moves the snake in the specified direction."""
     if direction == curses.KEY_DOWN:
@@ -297,13 +282,12 @@ def move_snake(position, direction):
     else:
         return position  # Don't raise an error, just return current position
 
-
 def check_collision(
-    new_head, 
-    snake_body, 
-    target_position, 
-    obstacles, 
-    game_state, 
+    new_head,
+    snake_body,
+    target_position,
+    obstacles,
+    game_state,
     current_time
 ):
     """Checks for collision with target position or snake body."""
@@ -315,7 +299,7 @@ def check_collision(
             points = SPECIAL_FOOD_TYPES[game_state.food_type]['points']
             game_state.score += points
         else:
-            if (score_multiplier_time and 
+            if (score_multiplier_time and
                 current_time - score_multiplier_time <= SCORE_MULTIPLIER_WINDOW):
                 score_multiplier += 1
             else:
@@ -323,11 +307,10 @@ def check_collision(
             score_multiplier_time = current_time
             game_state.score += 1 * score_multiplier
         return False  # Fix: should return False to indicate no collision with snake body
-    if new_head in list(snake_body)[:-1]: # Exclude the tail from self-collision check
+    if new_head in list(snake_body)[:-1]:  # Exclude the tail from self-collision check
         return True
 
     return False
-
 
 def draw_game(stdscr, game_state, score_multiplier):
     """Draws the game elements on the screen."""
@@ -340,14 +323,14 @@ def draw_game(stdscr, game_state, score_multiplier):
 
     for pos in game_state.snake_body:
         stdscr.addstr(pos[0], pos[1], "#")
-    
+
     if game_state.food_position:
         food_char = '*'
         if game_state.food_type in SPECIAL_FOOD_TYPES:
             food_char = SPECIAL_FOOD_TYPES[game_state.food_type]['char']
         stdscr.addstr(
-            game_state.food_position[0], 
-            game_state.food_position[1], 
+            game_state.food_position[0],
+            game_state.food_position[1],
             food_char
         )
 
@@ -369,57 +352,50 @@ def draw_game(stdscr, game_state, score_multiplier):
 
     stdscr.refresh()
 
-
 def increase_speed(game_state):
     """Increases the game speed based on the current level."""
     if game_state.score % POINTS_PER_LEVEL == 0 and game_state.score != 0:
         game_state.level += 1
         game_state.delay = max(0.05, game_state.delay * SPEED_INCREASE_PER_LEVEL)
 
-
 def check_level(game_state):
     """Checks the current level and updates game state (obstacles)."""
     while len(game_state.obstacles) < game_state.level * OBSTACLE_COUNT_PER_LEVEL:
         game_state.obstacles.append(generate_obstacle(game_state))
 
-
 def generate_obstacle(game_state):
     """Generates an obstacle, avoiding collisions with other objects."""
     return {'position': game_state.generate_new_item_position(), 'type': random.choice(['small', 'large'])}
 
-
-
 def game_over(new_head, snake_body):
     """Checks for game over (collision with self)."""
-    return new_head in list(snake_body)[:-1] #Exclude tail from self collision
-
+    return new_head in list(snake_body)[:-1]  # Exclude tail from self collision
 
 def game_over_screen(stdscr, message, score):
     """Displays the game over screen and asks the player if they want to restart."""
     stdscr.clear()
     center_y = MAX_Y // 2
     center_x = MAX_X // 2
-    
+
     stdscr.addstr(center_y, center_x - len(message) // 2, message)
     stdscr.addstr(
-        center_y + 1, 
-        center_x - len(str(score)) // 2, 
+        center_y + 1,
+        center_x - len(str(score)) // 2,
         f"Score: {score}"
     )
     stdscr.addstr(
-        center_y + 2, 
-        center_x - 10, 
+        center_y + 2,
+        center_x - 10,
         "Press 'r' to restart or 'q' to quit"
     )
     stdscr.refresh()
-    
+
     while True:
         key = stdscr.getch()
         if key == ord('r'):
             return True
         elif key == ord('q'):
             return False
-
 
 def apply_power_up_effect(game_state, current_time):
     """Applies power-up effects and updates the game state."""
@@ -434,7 +410,6 @@ def apply_power_up_effect(game_state, current_time):
             game_state.power_ups.remove(power_up)  # Remove expired power-up
 
     return game_state.delay
-
 
 def handle_power_up(game_state, power_up):
     """Handle the effect of a power-up."""
@@ -466,7 +441,6 @@ def restore_power_up(game_state, power_up):
         global score_multiplier
         score_multiplier /= 2  # Restore score multiplier
 
-
 def generate_power_up(current_time, game_state):
     """Generates a power-up with a position avoiding other objects and too close to the snake's head."""
     while True:
@@ -475,7 +449,6 @@ def generate_power_up(current_time, game_state):
             break
     power_up_type = random.choice(POWER_UP_TYPES + ['invincible', 'multiplier'])
     return {'position': position, 'type': power_up_type}
-
 
 def play_background_music(music_file):
     """Plays background music indefinitely."""
