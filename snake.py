@@ -228,13 +228,13 @@ def main(stdscr):
                     if game_state.invincible and current_time > game_state.invincibility_end_time:
                         game_state.invincible = False
 
-                    #Append the new head after potential growth/powerup application.
+                    # Append the new head after potential growth/powerup application.
                     game_state.snake_body.append(new_head)
 
 
 
                     if not game_state.invincible:
-                    #Check for obstacle collisions
+                    # Check for obstacle collisions
                         for obstacle in list(game_state.obstacles):
                             if check_collision(new_head, game_state.snake_body, obstacle['position'], game_state.obstacles, game_state, current_time):
                                 raise ValueError("Game Over! You hit an obstacle.")
@@ -244,13 +244,13 @@ def main(stdscr):
                             raise ValueError("Game Over! You ran into yourself.")
 
 
-                    #Power-Up Pickup
+                    # Power-Up Pickup
                     for power_up in list(game_state.power_ups):
                         if check_collision(new_head, game_state.snake_body, power_up['position'], game_state.obstacles, game_state, current_time):
                             if power_up['type'] == 'invincible':
                                 game_state.invincible = True
                                 game_state.invincibility_end_time = current_time + INVINCIBILITY_DURATION
-                            #Note: Effects are now applied before the move.
+                            # Note: Effects are now applied before the move.
 
                             game_state.power_ups.remove(power_up)
 
