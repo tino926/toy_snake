@@ -33,13 +33,17 @@ SPECIAL_FOOD_TYPES = {
 }
 
 def load_high_score():
+    # Try to load the high score from the JSON file
     try:
         with open(HIGH_SCORE_FILE, 'r') as f:
             return json.load(f).get('high_score', 0)
+    # If the file doesn't exist, return 0 as the default high score
     except FileNotFoundError:
         return 0
 
+
 def save_high_score(high_score):
+    # Save high score to a JSON file
     with open(HIGH_SCORE_FILE, 'w') as f:
         json.dump({'high_score': high_score}, f)
 
