@@ -69,6 +69,7 @@ def save_high_score(high_score):
 
 class GameState:
     def __init__(self):
+        """Initialize the game state."""
         self.score = 0
         self.level = 1
         self.delay = INITIAL_DELAY
@@ -117,7 +118,8 @@ class GameState:
     def load_game(self, filename="savegame.json"):
         """Load the game state from a file."""
         with open(filename, 'r') as f:
-            self.__dict__ = json.load(f)
+            data = json.load(f)
+            self.__dict__.update(data)
             self.snake_body = deque(self.snake_body)  # Convert list back to deque
 
 def main(stdscr):
@@ -306,7 +308,7 @@ def check_collision(
                 score_multiplier = 1
             score_multiplier_time = current_time
             game_state.score += 1 * score_multiplier
-        return False  # Fix: should return False to indicate no collision with snake body
+        return True  # Fix: should return True to indicate collision with food
     if new_head in list(snake_body)[:-1]:  # Exclude the tail from self-collision check
         return True
 
