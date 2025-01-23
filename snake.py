@@ -11,7 +11,8 @@ pygame.mixer.init()
 # --- Constants ---
 MAX_X, MAX_Y = 40, 20
 FRAME_RATE = 30
-POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove', 'shrink']
+POWER_UP_TYPES = ['speed', 'grow', 'slow', 'obstacle_remove', 'shrink', 'teleport']
+DIFFICULTY_LEVELS = {'Easy': 1.2, 'Normal': 1.0, 'Hard': 0.8}
 POINTS_PER_LEVEL = 10
 SPEED_INCREASE_PER_LEVEL = 0.9
 INITIAL_DELAY = 0.1
@@ -32,18 +33,27 @@ SPECIAL_FOOD_TYPES = {
     'poison': {'char': '!', 'points': -2, 'probability': 0.15}
 }
 
-def load_high_score():
-    # Try to load the high score from the JSON file
+def load_high_score() -> int:
+    """
+    Load the high score from the JSON file.
+    
+    Returns:
+        int: The current high score.
+    """
     try:
         with open(HIGH_SCORE_FILE, 'r') as f:
             return json.load(f).get('high_score', 0)
-    # If the file doesn't exist, return 0 as the default high score
     except FileNotFoundError:
         return 0
 
 
-def save_high_score(high_score):
-    # Save high score to a JSON file
+def save_high_score(high_score: int) -> None:
+    """
+    Save the high score to a JSON file.
+    
+    Args:
+        high_score (int): The new high score to save.
+    """
     with open(HIGH_SCORE_FILE, 'w') as f:
         json.dump({'high_score': high_score}, f)
 
@@ -58,6 +68,8 @@ class GameState:
         self.invincibility_end_time = 0
         self.high_score = load_high_score()
         self.food_type = 'normal'
+        self.difficulty = 'Normal'
+
 
     def generate_new_item_position(self):
         while True:
@@ -87,6 +99,31 @@ class GameState:
             self.__dict__.update(data)
             self.snake_body = deque(self.snake_body)
 
+def select_difficulty(stdscr):
+    difficulties = list(DIFFICULTY_LEVELS.keys())
+    current_selection = 1  # Default to 'Normal'
+    
+    while True:
+        stdscr.clear()
+        stdscr.addstr(MAX_Y // 2 - 2, MAX_X // 2 - 10, "Select Difficulty:")
+        
+        for i, diff in enumerate(difficulties):
+            y = MAX_Y // 2 + i
+            x = MAX_X // 2 - len(diff) // 2
+            if i == current_selection:
+                stdscr.attron(curses.A_REVERSE)
+            stdscr.addstr(y, x, diff)
+            if i == current_selection:
+                stdscr.attroff(curses.A_REVERSE)
+        
+        key = stdscr.getch()
+        if key == curses.KEY_UP and current_selection > 0:
+            current_selection -= 1
+        elif key == curses.KEY_DOWN and current_selection < len(difficulties) - 1:
+            current_selection += 1
+        elif key == ord('\n'):
+            return difficulties[current_selection]
+
 def main(stdscr):
     global MAX_X, MAX_Y, SNAKE_COLLISION_ENABLED, SNAKE_GROWTH_ON_FOOD, score_multiplier_time, score_multiplier
     curses.curs_set(0)
@@ -97,7 +134,10 @@ def main(stdscr):
         max_y, max_x = stdscr.getmaxyx()
         MAX_X, MAX_Y = min(MAX_X, max_x - 2), min(MAX_Y, max_y - 2)
 
+        difficulty = select_difficulty(stdscr)
         game_state = GameState()
+        game_state.difficulty = difficulty
+        game_state.delay *= DIFFICULTY_LEVELS[difficulty]
         try:
             game_state.load_game()
         except FileNotFoundError:
@@ -316,6 +356,10 @@ def handle_power_up(game_state, power_up):
         if len(game_state.snake_body) > 3:
             for _ in range(3):
                 game_state.snake_body.popleft()
+    elif power_up['type'] == "teleport":
+        new_position = game_state.generate_new_item_position()
+        game_state.snake_body.append(new_position)
+        game_state.snake_body.popleft()
 
 def restore_power_up(game_state, power_up):
     if power_up['type'] == "speed":
